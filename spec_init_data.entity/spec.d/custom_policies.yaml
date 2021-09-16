@@ -1,0 +1,18 @@
+---
+# IAM Custom Policy Specification
+#
+# List of IAM policy definitions.  Custom policies are created in accounts in
+# which the policy is attached to least one group or delegation role.
+#
+#
+# Each custom policy spec (SCP) has the following attributes:
+#   Name (str):         The name of the SCP.
+#   Description (str):  The policy description.
+#   Statement (list(dict)):  
+#                       List of IAM policy statements applied to the SCP.
+
+custom_policies:
+
+
+
+

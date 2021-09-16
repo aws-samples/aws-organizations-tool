@@ -1,0 +1,36 @@
+---
+# List of managed AWS accounts in the Organization.
+#
+# Each account spec the following attributes:
+#   Name (str):   The name of the account
+#   Email (str):  The email address used when creating a new account.  This
+#                 address must be unique in all AWS.  If omitted, we combine
+#                 the account name and the default_email_domain.
+#   Alias (str):  String to use for the account alias.  Defaults to 'Name' in
+#                 lower case.
+#   Tags (dict):  Tags to apply to the AWS account. The tag value can have
+#                 up to 256 characters.
+#                 Valid characters: a-z, A-Z, 0-9, and . : + = @ _ / - (hyphen)
+
+accounts:
+- Name: master-account
+  Email: master-account@example.com
+  Alias: master
+  Tags:
+    Owner: Yegamani Kumar
+    Application: infrastructure
+    Environment: production
+- Name: central-auth
+  Email: central-auth@example.com
+  Alias: auth
+  Tags:
+    Owner: Yegamani Kumar
+    Application: infrastructure
+    Environment: production
+- Name: dev1
+  Email: dev1@example.com
+  Alias: dev1
+  Tags:
+    Owner: Candy Jong
+    Application: fistua
+    Environment: development

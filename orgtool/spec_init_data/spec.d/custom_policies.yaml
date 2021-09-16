@@ -1,0 +1,88 @@
+---
+# IAM Custom Policy Specification
+#
+# List of IAM policy definitions.  Custom policies are created in accounts in
+# which the policy is attached to least one group or delegation role.
+#
+#
+# Each custom policy spec (SCP) has the following attributes:
+#   Name (str):         The name of the SCP.
+#   Description (str):  The policy description.
+#   Statement (list(dict)):  
+#                       List of IAM policy statements applied to the SCP.
+
+custom_policies:
+- PolicyName: UserSelfService
+  Description: Allow users to manage thier own account and credentials
+  Statement:
+  - Sid: AllowAllUsersToListAccounts
+    Effect: Allow
+    Action:
+    - iam:ListAccountAliases
+    - iam:ListUsers
+    - iam:ListUserPolicies
+    - iam:ListAttachedUserPolicies
+    - iam:GetAccountSummary
+    - iam:ListGroups
+    - iam:ListGroupPolicies
+    - iam:ListAttachedGroupPolicies
+    - iam:GetGroup
+    - iam:GetGroupPolicy
+    - iam:ListMFADevices
+    Resource: "*"
+  - Sid: AllowIndividualUserToSeeAndManageTheirOwnAccountInformation
+    Effect: Allow
+    Action:
+    - iam:ListGroupsForUser
+    - iam:ChangePassword
+    - iam:CreateAccessKey
+    - iam:CreateLoginProfile
+    - iam:DeleteAccessKey
+    - iam:DeleteLoginProfile
+    - iam:GetAccountPasswordPolicy
+    - iam:GetLoginProfile
+    - iam:ListAccessKeys
+    - iam:UpdateAccessKey
+    - iam:UpdateLoginProfile
+    - iam:ListSigningCertificates
+    - iam:DeleteSigningCertificate
+    - iam:UpdateSigningCertificate
+    - iam:UploadSigningCertificate
+    - iam:ListSSHPublicKeys
+    - iam:GetSSHPublicKey
+    - iam:DeleteSSHPublicKey
+    - iam:UpdateSSHPublicKey
+    - iam:UploadSSHPublicKey
+    Resource: arn:aws:iam::*:user/*/${aws:username}
+  - Sid: AllowIndividualUserToListTheirOwnMFA
+    Effect: Allow
+    Action:
+    - iam:ListVirtualMFADevices
+    - iam:ListMFADevices
+    Resource:
+    - arn:aws:iam::*:mfa/*
+    - arn:aws:iam::*:user/*/${aws:username}
+  - Sid: AllowIndividualUserToManageTheirOwnMFA
+    Effect: Allow
+    Action:
+    - iam:CreateVirtualMFADevice
+    - iam:DeactivateMFADevice
+    - iam:DeleteVirtualMFADevice
+    - iam:RequestSmsMfaRegistration
+    - iam:FinalizeSmsMfaRegistration
+    - iam:EnableMFADevice
+    - iam:ResyncMFADevice
+    Resource:
+    - arn:aws:iam::*:mfa/${aws:username}
+    - arn:aws:iam::*:user/*/${aws:username}
+  - Sid: BlockAnyAccessOtherThanAboveUnlessSignedInWithMFA
+    Effect: Deny
+    NotAction:
+    - iam:*
+    Resource: "*"
+    Condition:
+      BoolIfExists:
+        aws:MultiFactorAuthPresent: 'false'
+
+
+

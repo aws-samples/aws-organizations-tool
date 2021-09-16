@@ -1,0 +1,31 @@
+---
+# Users Specification
+#
+# List of IAM users managed within the Central Auth account.
+#
+# Each user has the following attributes all of type 'str':
+#   Name (str):        The name of the user - required.
+#   Ensure ('present'[default]|'absent'):
+#                      Setting to 'absent' will cause the user to be deleted.
+#   CN (str):          ActiveDirectory 'cn' attribute for this user.
+#                      i.e. <Firstname Lastname>
+#   Email (str):       The email address with which the user can be contacted.
+#                      Should match the ActiveDirectory 'mail' attribute.
+#   RequestId (str):   Ticketing system tracking number of a new user request.
+
+users:
+- Name: ashley
+  Ensure: present
+  CN: Ashley Gould
+  Email: ashley@example.com
+  RequestId: RIT0012340
+- Name: kalila
+  Ensure: present
+  CN: Kalila Bidpai
+  Email: kalila@example.com
+  RequestId: RIT0012341
+- Name: dimna
+  Ensure: present
+  CN: Dimna Bidpai
+  Email: dimna@example.com
+  RequestId: RIT0012342

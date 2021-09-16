@@ -1,0 +1,43 @@
+---
+# Service Control Policy Specification
+#
+# Defines custom Service Control Policies which can then be attached 
+# to Organizational Units.
+#
+# Each service control policy spec (SCP) has the following attributes:
+#   Name (str):         The name of the SCP.
+#   Ensure (str):       One of 'present' (default) or 'absent'. Setting
+#                       to 'absent' will cause the SCP to be deleted, but
+#                       only if it not attached to any Organizational Unit.
+#   Description (str):  The policy description.
+#   Statement (list(dict)):  
+#                       List of IAM policy statements applied to the SCP.
+
+sc_policies:
+- PolicyName: LimitAWSRegions
+  Ensure: present
+  Description: Limit the AWS regions where users can deploy resources
+  Statement:
+  - Sid: DenyAllRegionsOutsideUS
+    Effect: Deny
+    NotAction:
+    - iam:*
+    - organizations:*
+    - route53:*
+    - budgets:*
+    - waf:*
+    - cloudfront:*
+    - globalaccelerator:*
+    - importexport:*
+    - support:*
+    Resource: '*'
+    Condition:
+      StringNotEquals:
+        aws:RequestedRegion:
+        - us-east-1
+        - us-east-2
+        - us-west-1
+        - us-west-2
+
+
+

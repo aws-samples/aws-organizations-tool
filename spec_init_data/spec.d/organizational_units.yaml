@@ -1,0 +1,30 @@
+---
+# Organizational Unit Specification.
+#
+# This specification maps the Organization's structure and assigns policies and
+# accounts to organizational units.
+#
+# Each organizational_unit spec (OU) has the following attributes:
+#   Name (str):     The name of the OU (required)
+#   Ensure (str):   One of 'present' (default) or 'absent'.  Setting to 
+#                   'absent' will cause the OU to be deleted but
+#                   only if no accounts are still assigned to the OU.
+#   Accounts (list(str)): 
+#                   List of account names assigned to this OU.
+#   SC_Policies (list(str)): 
+#                   List of Service Control Policies attached to this OU.
+#   Child_OU (list(organizational_unit)):
+#                   List of child Organizational Units (recursive structure).
+#   IncludeConfigPath (string):
+#                   Path to the config file of an orgtool configuration to include here for the tree and merge for the Accounts and SCPs
+#                   The Name of OU is equal to the name of the upper OU in the included configuration 
+#   MountingOUPath (string):
+#                   For an included configuration, this is the reference to the mounting point path into the OUs tree.
+#                   This exist only if the upper name of the tree is not "root". if not, raise an exception
+#                   The upper name of the tree is equal to the OU name of the mointing point
+#   PrefixRequired:
+#                   Only used with IncludeConfigPath.
+#                   Prefix value to use to validate naming convention for included SCP name
+
+
+organizational_units:

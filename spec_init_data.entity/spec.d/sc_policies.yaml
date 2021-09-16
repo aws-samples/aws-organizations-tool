@@ -1,0 +1,16 @@
+---
+# Service Control Policy Specification
+#
+# Defines custom Service Control Policies which can then be attached 
+# to Organizational Units.
+#
+# Each service control policy spec (SCP) has the following attributes:
+#   Name (str):         The name of the SCP.
+#   Ensure (str):       One of 'present' (default) or 'absent'. Setting
+#                       to 'absent' will cause the SCP to be deleted, but
+#                       only if it not attached to any Organizational Unit.
+#   Description (str):  The policy description.
+#   Statement (list(dict)):  
+#                       List of IAM policy statements applied to the SCP.
+
+sc_policies:
