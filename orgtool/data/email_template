@@ -1,0 +1,61 @@
+Dear User,
+
+You have been granted access to our central AWS authentication
+account.  From here you can assume designated roles into other AWS
+accounts in our Organization.
+
+You must complete the following tasks to configure your access:
+
+
+1) Use the credentials below to log into the AWS console.  You will be
+required to change your password as you log in.  The rules for good
+passwords are as follows:
+
+- Minimum password length: 14
+- Require at least one uppercase character from Latin alphabet. (A-Z)
+- Require at least one lowercase character from Latin alphabet. (a-z)
+- Require at least one symbol. (!@#$$%^&amp;*()_+-=[]{}|')
+- Require at least one number. (0-9)
+
+IMPORTANT: your one time password will expire after 24 hours.
+
+  IAM User Name:	$user_name
+  One Time Password:	$onetimepw
+  Login URL:            https://${trusted_account}.signin.aws.amazon.com/console
+
+
+2) Set up your 'Virtual MFA Device' in the AWS console.
+
+Instructions:
+http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html#enable-virt-mfa-for-iam-user
+
+You can use either Duo or Google Authenticator as your virtual MFA device.
+
+Instructions for installing Google Authenticator:
+https://support.google.com/accounts/answer/1066447?co=GENIE.Platform%3DiOS&hl=en&oco=0
+
+
+3) Log out and log back in again.  You will be queried for your 6 digit
+token code.  
+
+
+4) Verify you can switch role into any accounts where you have cross
+account access.  From the delegation information listed below supply
+the account_alias or account_id in the 'Account' field.  Supply the
+role_name in the 'Role' field.
+
+Instructions:
+https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-console.html?icmpid=docs_iam_console
+
+
+5) (optional) Set up 'AWS Access Keys' for your IAM user.  
+
+Instructions:
+http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey
+
+
+Your IAM user has been delegated cross account access to the following
+accounts.  
+
+$delegations
+

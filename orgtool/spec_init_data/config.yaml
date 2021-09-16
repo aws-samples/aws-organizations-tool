@@ -1,0 +1,18 @@
+# orgtool Configuration Parameters
+
+# Path to yaml spec files directory.  Any yaml files under this dirctory
+# (recursive) are parsed as spec files.
+spec_dir: ~/.orgtool/spec.d
+
+# An AWS role name which permits cross account access to all accounts.
+org_access_role: Org_Provisioning
+
+# Use an alternate role from master account when setting up a new account.
+#org_access_role: OrganizationAccountAccessRole
+
+# AWS account Id for the Organization master account.  This must be in quotes.
+master_account_id: '121212121212'
+
+# AWS account Id for the Central Auth account.  This must be in quotes.
+# This Central Auth account can be the same as the Master account.
+auth_account_id: '343434343434'

@@ -1,0 +1,35 @@
+---
+# Group Specification
+#
+# List of IAM group resources managed within the Central Auth account.
+#
+# Each group has the following attributes:
+#  Name (str):      The group name.
+#  Ensure (str):    One of 'present' (default) or 'absent'. Setting to
+#                   'absent' will cause the group to be deleted, but
+#                   only if the group contains no users.
+#  Members (list(str), 'ALL'): 
+#                   List of IAM users who are members of this group.
+#                   If set to 'ALL', all managed users in the Central
+#                   Auth account become members.
+#  ExcludeMembers (list(str)):
+#                   If 'Members' attribute is set to 'ALL', any users 
+#                   listed in 'ExludeMembers' are excluded from the group.
+#  Policies (list(str)):
+#                   List of IAM policies to attach to this group.
+
+groups:
+- Name: all-users
+  Members: ALL
+  Policies:
+  - UserSelfService
+- Name: admins
+  Members:
+  - ashley 
+- Name: devops
+  Members:
+  - kalila 
+  - dimna 
+
+
+

@@ -1,0 +1,46 @@
+---
+# AWS Auth Delegations Specification
+#
+# A delegation is a complex of IAM resources which combine to allow
+# users in the ('trusted') Auth account to access and manipulate
+# resources in one or several or the other ('trusting') accounts in
+# the Organization.  This is accomplished by managing a delegation
+# role in the trusting accounts which contains a trust policy naming
+# the Auth account as 'principal', and by assigning 'assume role'
+# policies to a managed group in the Auth account for each trusting
+# account within the scope of the delegation specification.
+#
+# Each delegation spec has the following attributes:
+#   RoleName (str):     The name of the IAM role created in trusting accounts.
+#   Ensure ('present'[default]|'absent'):
+#                       Determines whether the IAM role exists or not.
+#                       Setting to 'absent' deletes delegation roles in
+#                       trusting accounts and removes assume role policies
+#                       from the trusted group.
+#   Description (str):  A decription applied to the IAM role.
+#   Path (str):         Path prefix for the IAM user resource name. (optional)
+#                       If Path is not fully qualified (i.e. starts with '/'),
+#                       awsauth prepends the 'default_path' to Path.
+#   TrustingAccount (list(str), 'ALL'):
+#                       List of trusting accounts within the scope of the
+#                       delegation.  If set to 'ALL', all accounts in the
+#                       Organization are include in the delegation.
+#   ExcludeAccounts (list(str)):
+#                       If 'TrustingAccount' attribute is set to 'ALL',
+#                       any accounts listed in 'ExludeAccounts' are
+#                       excluded from the delegation.
+#   TrustedGroup (str): The IAM group in the Auth account in which to assign
+#                       assume role policies for this delegation.
+#   TrustedAccount (str):
+#                       The account Id to use as principle in service roles.
+#   RequireMFA (bool):  When set to 'True' (the default), add
+#                       a condition to the trust policy requiring users
+#                       assuming the delegation role to have valid MFA token.
+#   Duration (int):     MaxSessionDuration time in seconds. Default is 3600.
+#   Policies (list(str)):
+#                       List of IAM policies to attach to the delegation role
+#                       in the trusting accounts.
+#   PolicySet (str):    Name of the policy set to attach to the delegation role
+#                       Incomplatible with "Policies".
+
+delegations:

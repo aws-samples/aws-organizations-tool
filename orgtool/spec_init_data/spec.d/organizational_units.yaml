@@ -1,0 +1,33 @@
+---
+# Organizational Unit Specification.
+#
+# This specification maps the Organization's structure and assigns policies and
+# accounts to organizational units.
+#
+# Each organizational_unit spec (OU) has the following attributes:
+#   Name (str):     The name of the OU (required)
+#   Ensure (str):   One of 'present' (default) or 'absent'.  Setting to 
+#                   'absent' will cause the OU to be deleted but
+#                   only if no accounts are still assigned to the OU.
+#   Accounts (list(str)): 
+#                   List of account names assigned to this OU.
+#   SC_Policies (list(str)): 
+#                   List of Service Control Policies attached to this OU.
+#   Child_OU (list(organizational_unit)):
+#                   List of child Organizational Units (recursive structure).
+
+organizational_units:
+# the root OU must be defined
+- Name: root
+  Accounts: 
+  - master-account 
+  - central-auth
+  Policies:
+  Child_OU:
+  - Name: applications
+    Accounts:
+    - dev1
+    SC_Policies:
+    - LimitAWSRegions
+
+

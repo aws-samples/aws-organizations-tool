@@ -1,0 +1,34 @@
+---
+# Policy Set Specification
+#
+# A Policy Set is a list of IAM policies, either AWS managed or customer
+# managed, which taken in composit, define the permissions available to
+# a particular job function, such as "Developer" of "SecurityAuditor".
+#
+# Each policy set spec has the following attributes:
+#   Name (str):             the policy set name
+#   Descriptsion (str):     describes the scope of the policy set
+#   Tags (list(dict)):      list of tags to apply to delegation roles made from
+#                           this policy set
+#   Policies (list(str)):   list of IAM policy names
+
+policy_sets:
+- Name: Developer
+  Description: Access for application developers.
+  Tags:
+  - Key: jobfunctionrole
+    Value: True
+  Policies:
+  - PowerUserAccess
+  - IAMReadOnlyAccess
+- Name: TesterPolicySet
+  Description: Access for testers
+  Tags:
+  - Key: jobfunctionrole
+    Value: True
+  Policies:
+  - ReadOnlyAccess
+  - ReadS3Bucket
+
+
+

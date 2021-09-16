@@ -1,0 +1,49 @@
+---
+
+# orgtool installation must be greater than or eqaul to this version number.
+minimum_version: '0.3.4'
+
+# orgtool configuration parameters common to all operations.
+
+# AWS account Id for the Organization master account.  This must be in quotes.
+master_account_id: '000000000000'
+
+# AWS account Id for the Central Auth account.  This must be in quotes.
+auth_account_id: '000000000000'
+
+# Email domain to use for account creation if the accounts['Email'] field
+# is not explicitly specified.
+# macro --org_id--, --entity_name--, --account_name--
+default_domain: example.com
+default_email_pattern: 'admin+--account_name--@example.com'
+
+# Default Organizational Unit.  Any accounts in the Organization not
+# explicitly assigned to an Organizational Unit are placed here.
+default_ou: root
+
+# Laurent DELHOMME, AWS, June 2020
+# Add new behavior to control if unmanaged account are moved to the default OU
+# Move unmanaged account to the default OU
+move_unmanaged_account: False
+
+# Default Organization Service Control Policy.  This is managed by AWS and
+# should not be modified or deleted.  This is attached to all Organizational
+# Units.
+default_sc_policy: FullAWSAccess
+
+# This string is prepended to all IAM resource 'path' attributes.
+default_path: awscc
+
+# Default SMTP email server to use when sending email messages.
+default_smtp_server: smtp.example.com
+
+# These contacts are references when generating email messages.
+org_admin_email: orgadmin@axa.com
+
+
+
+# custom_policies:
+# delegations:
+# groups:
+# local_users:
+# users:

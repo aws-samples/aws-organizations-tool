@@ -1,0 +1,11 @@
+*.swp
+*.swo
+*.pyc
+*.egg-info
+build/
+dist/
+docs/_build
+docs/.orgtool*
+docs/demo
+output_orgtool
+output_orgtool/*
