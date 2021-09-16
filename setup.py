@@ -1,4 +1,4 @@
-"""orgtool setup"""
+"""org-tool setup"""
 
 from orgtool import __version__
 from setuptools import setup, find_packages
@@ -10,7 +10,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='orgtool',
+    name='org-tool',
     version=__version__,
     description='Tools to manage AWS Organizations. nota: this is a fork from aws-orgs tool, published by Ashley Gould <agould@ucop.edu> at https://github.com/ucopacme/aws-orgs',
     long_description=long_description,
@@ -24,8 +24,7 @@ setup(
         'Intended Audience :: System Administrators',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8'
+        'Programming Language :: Python :: 3.7'
     ],
     keywords='aws organizations',
     packages=find_packages(exclude=['scratch', 'notes']),
