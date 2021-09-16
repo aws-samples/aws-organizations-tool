@@ -9,3 +9,5 @@ docs/.orgtool*
 docs/demo
 output_orgtool
 output_orgtool/*
+venv
+venv/*
