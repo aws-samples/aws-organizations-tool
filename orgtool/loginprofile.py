@@ -2,19 +2,19 @@
 """Manage AWS IAM user login profile.
 
 Usage:
-  awsloginprofile USER [--config FILE]
-                       [--master-account-id ID]
-                       [--auth-account-id ID]
-                       [--org-access-role ROLE]
-                       [--report]
-                       [--new | --reset | --reenable]
-                       [--no-email]
-                       [--disable]
-                       [--disable-expired]
-                       [--opt-ttl HOURS]
-                       [--password PASSWORD]
-                       [-q] [-d|-dd]
-  awsloginprofile (--help|--version)
+  orgtoolloginprofile USER  [--config FILE]
+                            [--master-account-id ID]
+                            [--auth-account-id ID]
+                            [--org-access-role ROLE]
+                            [--report]
+                            [--new | --reset | --reenable]
+                            [--no-email]
+                            [--disable]
+                            [--disable-expired]
+                            [--opt-ttl HOURS]
+                            [--password PASSWORD]
+                            [-q] [-d|-dd]
+  custom_policiesloginprofile (--help|--version)
 
 Options:
   USER                      Name of IAM user.

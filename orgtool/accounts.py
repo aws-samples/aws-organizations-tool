@@ -4,14 +4,14 @@
 """Manage accounts in an AWS Organization.
 
 Usage:
-  awsaccounts (report|create|update|invite) [--config FILE]
-                                           [--spec-dir PATH] 
-                                           [--master-account-id ID]
-                                           [--auth-account-id ID]
-                                           [--org-access-role ROLE]
-                                           [--invited-account-id ID]
-                                           [--exec] [-q] [-d|-dd]
-  awsaccounts (--help|--version)
+  orgtoolaccounts (report|create|update|invite) [--config FILE]
+                                                [--spec-dir PATH] 
+                                                [--master-account-id ID]
+                                                [--auth-account-id ID]
+                                                [--org-access-role ROLE]
+                                                [--invited-account-id ID]
+                                                [--exec] [-q] [-d|-dd]
+  orgtoolaccounts (--help|--version)
 
 Modes of operation:
   report         Display organization status report.
