@@ -1,0 +1,292 @@
+AWSTemplateFormatVersion: '2010-09-09'
+# Transform: AWS::Serverless-2016-10-31
+
+Description: |
+  Resources to perform IaC Organozation Formation
+
+Parameters:
+  BranchName:
+    Type: String
+    Default: master
+  OrgAccessRole:
+    Type: String
+
+
+
+Resources:
+
+  ArtifactsS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+
+
+  OrganisationConfigurationCodeCommit:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryDescription: Repository used to store the organisation configuration
+      RepositoryName: !Sub organisation-configuration-${AWS::AccountId}
+  
+
+
+################### Roles
+  OrgAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref OrgAccessRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+
+      
+  OrgFormationCodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-orgformationcodepipelinerole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service:
+            - codepipeline.amazonaws.com
+          Action:
+          - "sts:AssumeRole"
+      Path: /
+      Policies:
+      - PolicyName: !Sub ${AWS::StackName}-orgformationcodepipelinerole-policy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - codecommit:Get*
+            - codecommit:List*
+            - codecommit:UploadArchive
+            - codebuild:StartBuild
+            - codebuild:BatchGetBuilds
+            - logs:CreateLogStream
+            - s3:GetObject
+            - s3:ListBucket
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            Resource:
+            - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}/*
+            - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
+  
+
+
+  OrgFormationCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-orgformationcodebuildrole
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - codebuild.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess ### to be removed
+      Policies:  
+      - PolicyName: !Sub ${AWS::StackName}-orgformationcodebuildrole-policy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - 
+            Effect: Allow
+            Action:
+              - codecommit:BatchGetRepositories
+              - codecommit:Get*
+              - codecommit:GitPull
+              - codecommit:List*
+              - codecommit:CancelUploadArchive
+              - codecommit:UploadArchive  
+              - codebuild:StartBuild
+              - logs:CreateLogGroup 
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - iam:ListUsers
+              - iam:ListGroups
+              - iam:ListAccountAliases
+              - iam:DeleteAccountAlias
+              - iam:CreateAccountAlias
+              - iam:GetRole
+              - organizations:*
+              - s3:GetObject
+              - s3:ListBucket
+              - sts:AssumeRole
+              - states:SendTaskSuccess
+              - states:SendTaskFailure
+            Resource: "*"
+          - 
+            Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}/*
+              - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
+
+################### Roles
+
+
+##################### Code Build Projects (Linux)
+
+  OrgFormationCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AWS::StackName}-orgformationcodebuildproject
+      Description: Deploy organisation configuration
+      ServiceRole: !GetAtt OrgFormationCodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        EnvironmentVariables:
+          - Name: OrgAccessRole
+            Value: !Ref OrgAccessRole
+          - Name: BranchName
+            Value: !Ref BranchName
+          - Name: ArtifactsS3Bucket
+            Value: !Ref ArtifactsS3Bucket
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                python: 3.8
+              commands:
+                - |
+                  echo "install ..."
+                  echo "BranchName:               $BranchName"
+                  echo "ArtifactsS3Bucket:        $ArtifactsS3Bucket"
+                  echo "CODEBUILD_SRC_DIR:        $CODEBUILD_SRC_DIR"
+                  echo "Current path:             $(pwd)"
+                  echo "OrgAccessRole:            $OrgAccessRole"
+
+                  echo 'update PIP'
+                  pip install --upgrade pip
+
+                  echo 'check git version'
+                  git --version
+                  git config --global credential.helper '!aws codecommit credential-helper $@'
+                  git config --global credential.UseHttpPath true
+
+
+                  echo "Install orgtool"
+                  #####
+                  
+                  ##check is orgtool is into the source / if not out with error
+                  pip install -e ./org-tool
+
+
+                  ## check if orgconfig is into the source / if not, reverse setup
+                  
+
+                  
+                  echo "#########################################################"
+                  echo "Insall aws-orgs from the source code ./prj/aws-orgs-fork"
+                  echo 'Install aws-orgs-fork tool'
+                  
+            pre_build:
+              commands:
+                - |
+                  echo "pre build ..."                
+            build:
+              commands:
+                - |
+                  echo "build ..."                
+                  #bash ./awscc-orchestrator-${MasterAccountId}/prj/CF-foundation/CF-orga-foundation/scripts/awsorgs-reports.sh
+                  #bash ./awscc-orchestrator-${MasterAccountId}/prj/CF-foundation/CF-orga-foundation/scripts/awsorgs-dryrun.sh
+                  #bash ./awscc-orchestrator-${MasterAccountId}/prj/CF-foundation/CF-orga-foundation/scripts/awsorgs-apply.sh
+            post_build:
+              commands:
+                - |
+                  echo "post build ..."
+                  
+##################### Code Build Projects (Linux)
+
+
+############### Pipeline
+
+  OrgFormationCodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RestartExecutionOnUpdate: false
+      Name: !Sub ${AWS::StackName}-orgformationcodepipeline
+      RoleArn: !GetAtt OrgFormationCodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactsS3Bucket
+      Stages: 
+        - 
+          Name: Source
+          Actions:
+            - 
+              Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeCommit
+              OutputArtifacts:
+                - Name: SourceArtifact
+              Configuration:
+                OutputArtifactFormat: CODEBUILD_CLONE_REF
+                BranchName: master
+                RepositoryName: !GetAtt OrganisationConfigurationCodeCommit.Name
+                PollForSourceChanges: true
+              RunOrder: 1
+        - 
+          Name: Deploy
+          Actions:
+            - 
+              Name: Deploy
+              ActionTypeId:
+                Category: Build
+                Provider: CodeBuild
+                Owner: AWS
+                Version: 1
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: DeployArtifact
+              Configuration:
+                ProjectName: !Ref OrgFormationCodeBuildProject
+              RunOrder: 1
+############# Pipeline
+
+  OutputStackName:
+    Description: Created stack name
+    Value: !Ref AWS::StackName
+
+
+
+
+
+
+
+

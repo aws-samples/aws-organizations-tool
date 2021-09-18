@@ -5,16 +5,16 @@
 AWS Organization.
 
 Usage:
-  awsauth (users|delegations|local-users|report) [--config FILE]
-                                                 [--spec-dir PATH] 
-                                                 [--master-account-id ID]
-                                                 [--auth-account-id ID]
-                                                 [--org-access-role ROLE]
-                                                 [--disable-expired]
-                                                 [--opt-ttl HOURS]
-                                                 [--users --roles --credentials]
-                                                 [--account NAME] [--full]
-                                                 [--exec] [-q] [-d|-dd]
+  orgtoolauth (users|delegations|local-users|report)    [--config FILE]
+                                                        [--spec-dir PATH] 
+                                                        [--master-account-id ID]
+                                                        [--auth-account-id ID]
+                                                        [--org-access-role ROLE]
+                                                        [--disable-expired]
+                                                        [--opt-ttl HOURS]
+                                                        [--users --roles --credentials]
+                                                        [--account NAME] [--full]
+                                                        [--exec] [-q] [-d|-dd]
   awsauth (--help|--version)
 
 Modes of operation:

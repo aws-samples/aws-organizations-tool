@@ -1,23 +1,23 @@
 #!/usr/bin/env python
-"""Manage recources in an AWS Organization.
+"""Configure recources in an AWS Organization description files.
 
 Usage:
-  awsconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]
-  awsconfigure distributed-config create --template-config <path> --child-config <path> [--prefix <value>] --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
-  awsconfigure distributed-config delete --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
-  awsconfigure account create --config <path> --account-name <name> --email <email> --ou-path <path> [--alias <alias> --tag <key>=<value>...] [--exec] [-q] [-d|-dd]
-  awsconfigure account update --config <path> --account-name <name> --alias <alias> [--exec] [-q] [-d|-dd]
-  awsconfigure account tag (add|update|remove) --config <path> --account-name <name> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
-  awsconfigure account move --config <path> --account-name <name> --ou-path <path> [--config-from <path>] [--exec] [-q] [-d|-dd]
-  awsconfigure delegation (delete|create --trusted-account <name> --account-name <name>... --description <decription> [--require-mfa] [--ensure-present | --ensure-absent] --policies <policy-name>...) --config <path> --role-name <name> [--exec] [-q] [-d|-dd]
-  awsconfigure delegation trusting (add|remove) --config <path>  --role-name <name> --account-name <name>... [--exec] [-q] [-d|-dd]
-  awsconfigure organization-unit (create|delete) --config <path> --ou-path <path> [--exec] [-q] [-d|-dd]
-  awsconfigure organization-unit scp (add|remove) --config <path> --ou-path <path> [--scp-name <name>...] [--exec] [-q] [-d|-dd]
-  awsconfigure organization-unit tag (add|update|remove) --config <path> --ou-path <path> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
-  awsconfigure get-ou-list --output-file <path> --config <path> [--exec] [-q] [-d|-dd]
-  awsconfigure validate --config <path> [--exec] [-q] [-d|-dd]
-  awsconfigure report
-  awsconfigure (--help|--version)
+  orgtoolconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure distributed-config create --template-config <path> --child-config <path> [--prefix <value>] --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure distributed-config delete --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure account create --config <path> --account-name <name> --email <email> --ou-path <path> [--alias <alias> --tag <key>=<value>...] [--exec] [-q] [-d|-dd]
+  orgtoolconfigure account update --config <path> --account-name <name> --alias <alias> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure account tag (add|update|remove) --config <path> --account-name <name> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
+  orgtoolconfigure account move --config <path> --account-name <name> --ou-path <path> [--config-from <path>] [--exec] [-q] [-d|-dd]
+  orgtoolconfigure delegation (delete|create --trusted-account <name> --account-name <name>... --description <decription> [--require-mfa] [--ensure-present | --ensure-absent] --policies <policy-name>...) --config <path> --role-name <name> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure delegation trusting (add|remove) --config <path>  --role-name <name> --account-name <name>... [--exec] [-q] [-d|-dd]
+  orgtoolconfigure organization-unit (create|delete) --config <path> --ou-path <path> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure organization-unit scp (add|remove) --config <path> --ou-path <path> [--scp-name <name>...] [--exec] [-q] [-d|-dd]
+  orgtoolconfigure organization-unit tag (add|update|remove) --config <path> --ou-path <path> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
+  orgtoolconfigure get-ou-list --output-file <path> --config <path> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure validate --config <path> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure report
+  orgtoolconfigure (--help|--version)
 
 Modes of operation:
   reverse-setup                      Generate configuration files from the current AWS Organization deployed
@@ -25,6 +25,7 @@ Modes of operation:
                                      - spec.d/account.yaml, 
                                      - spec.d/common.yaml, 
                                      - spec.d/organizational_units.yaml, 
+                                     - spec.d/custom_policies
                                      - spec.d/sc_policies.yaml 
  
   distributed-config create          create a distributed config inclued in the parent config            

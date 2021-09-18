@@ -38,13 +38,16 @@ Installation
 
 Editable copy in venv::
 
-  git clone https://gitlab.aws.dev/delhom/orgtool
-  pip install -e orgtool/
+  git clone https://gitlab.aws.dev/delhom/org-tool
+  python3 -m venv ./org-tool/venv
+  source source ./org-tool/venv/bin/activate
+  sudo -H pip install --upgrade pip
+  sudo -H pip install -e ./org-tool/
 
 
 Uninstall::
 
-  pip uninstall orgtool
+  sudo -H pip uninstall orgtool
 
 
 Configuration quick start

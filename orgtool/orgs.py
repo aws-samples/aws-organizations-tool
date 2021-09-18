@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-
-
-"""Manage recources in an AWS Organization.
+"""Manage recources in an AWS Organization and Organization Unit tree.
 
 Usage:
   orgtool (report|organization) [--config FILE]
@@ -16,7 +14,7 @@ Usage:
 
 Modes of operation:
   report         Display organization status report only.
-  organizaion    Run AWS Org management tasks per specification.
+  organization   Run AWS Org management tasks per specification.
 
 Options:
   -h, --help                Show this help message and exit.
