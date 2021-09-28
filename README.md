@@ -511,6 +511,12 @@ organizational_units:
   - Name: recycled    # recycled OU for account to be reused
 ```
 
+You can use this template by runing the command bellow to create ``dist2`` nested configuration under ``root``:
+
+```
+orgtoolconfigure distributed-config create --template-config spec_init_data.entity/config.yaml --child-config organization/.orgtool/dist2/config.yaml --prefix dist2 --config organization/.orgtool/root/config.yaml  --ou-name dist2 --ou-path /root --exec [-q] [-d|-dd]
+```
+
 
 ## Conclusion:
 
