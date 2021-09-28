@@ -7,8 +7,10 @@ Description: |
 Parameters:
   BranchName:
     Type: String
-    Default: master
-  OrgAccessRole:
+    Default: main
+  OrgAccessRoleName:
+    Type: String
+  CodeInitBucketName:
     Type: String
 
 
@@ -30,6 +32,11 @@ Resources:
     Properties:
       RepositoryDescription: Repository used to store the organisation configuration
       RepositoryName: !Sub organisation-configuration-${AWS::AccountId}
+      Code:
+          BranchName: !Ref BranchName
+          S3: 
+            Bucket: !Ref CodeInitBucketName
+            Key: source.zip
   
 
 
@@ -37,7 +44,7 @@ Resources:
   OrgAccessRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Ref OrgAccessRole
+      RoleName: !Ref OrgAccessRoleName
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -56,7 +63,7 @@ Resources:
   OrgFormationCodePipelineRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-orgformationcodepipelinerole
+      RoleName: orgformationcodepipelinerole
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -68,7 +75,7 @@ Resources:
           - "sts:AssumeRole"
       Path: /
       Policies:
-      - PolicyName: !Sub ${AWS::StackName}-orgformationcodepipelinerole-policy
+      - PolicyName: orgformationcodepipelinerole-policy
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -95,7 +102,7 @@ Resources:
   OrgFormationCodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-orgformationcodebuildrole
+      RoleName: orgformationcodebuildrole
       AssumeRolePolicyDocument:
         Statement:
         - Effect: Allow
@@ -108,7 +115,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess ### to be removed
       Policies:  
-      - PolicyName: !Sub ${AWS::StackName}-orgformationcodebuildrole-policy
+      - PolicyName: orgformationcodebuildrole-policy
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -154,7 +161,7 @@ Resources:
   OrgFormationCodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub ${AWS::StackName}-orgformationcodebuildproject
+      Name: orgformationcodebuildproject
       Description: Deploy organisation configuration
       ServiceRole: !GetAtt OrgFormationCodeBuildRole.Arn
       Artifacts:
@@ -170,6 +177,8 @@ Resources:
             Value: !Ref BranchName
           - Name: ArtifactsS3Bucket
             Value: !Ref ArtifactsS3Bucket
+          - Name: OrganisationConfigurationCodeCommitName
+            Value: !GetAtt OrganisationConfigurationCodeCommit.Name
       Source:
         Type: CODEPIPELINE
         BuildSpec: |
@@ -181,47 +190,95 @@ Resources:
               commands:
                 - |
                   echo "install ..."
-                  echo "BranchName:               $BranchName"
-                  echo "ArtifactsS3Bucket:        $ArtifactsS3Bucket"
-                  echo "CODEBUILD_SRC_DIR:        $CODEBUILD_SRC_DIR"
-                  echo "Current path:             $(pwd)"
-                  echo "OrgAccessRole:            $OrgAccessRole"
-
-                  echo 'update PIP'
-                  pip install --upgrade pip
-
+                  echo "BranchName:                               $BranchName"
+                  echo "ArtifactsS3Bucket:                        $ArtifactsS3Bucket"
+                  echo "CODEBUILD_SRC_DIR:                        $CODEBUILD_SRC_DIR"
+                  echo "Current path:                             $(pwd)"
+                  echo "OrgAccessRole:                            $OrgAccessRole"
+                  echo "OrganisationConfigurationCodeCommitName:  $OrganisationConfigurationCodeCommitName"
+                  ACCOUNT_ID=$(aws sts get-caller-identity | jq -c -r .Account)
+                  echo "ACCOUNT_ID:                               $ACCOUNT_ID"
                   echo 'check git version'
                   git --version
-                  git config --global credential.helper '!aws codecommit credential-helper $@'
-                  git config --global credential.UseHttpPath true
-
-
-                  echo "Install orgtool"
-                  #####
+                  echo 'update PIP'
+                  pip install --upgrade pip
                   
-                  ##check is orgtool is into the source / if not out with error
-                  pip install -e ./org-tool
+                - |
+                  echo "Install org-tool"
+                  git clone https://github.com/delhomaws/org-tool
 
+                - |
+                  echo "Deploy/Update orgformation stack"
+                  aws cloudformation deploy \
+                      --no-fail-on-empty-changeset \
+                      --template-file ./org-tool/automation/orgformation.yaml \
+                      --stack-name "orgformation" \
+                      --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM \
 
-                  ## check if orgconfig is into the source / if not, reverse setup
-                  
-
-                  
-                  echo "#########################################################"
-                  echo "Insall aws-orgs from the source code ./prj/aws-orgs-fork"
-                  echo 'Install aws-orgs-fork tool'
-                  
+                - |
+                  echo "install org-tool"
+                  pip install -e org-tool/
+                  orgtool --version
+                  orgtool --help
+                                    
             pre_build:
               commands:
                 - |
-                  echo "pre build ..."                
+                  echo "pre build ..."
+                  echo "check if ./organization/.orgtool is into the source / if not, git clone, reverse setup, git commit, then exit. next build will deploy for check"
+                  if [ ! -d "./organization/.orgtool/root" ] 
+                  then
+                      echo "orgtool configuration is not yet setup into the ${OrganisationConfigurationCodeCommitName} repository." 
+
+                      git config --global credential.helper '!aws codecommit credential-helper $@'
+                      git config --global credential.UseHttpPath true
+                      git config --global user.email "orgtoolconfigure@${ACCOUNT_ID}.aws"
+                      git config --global user.name "orgtoolconfigure"
+
+                      echo 'Install git-remote-codecommit'
+                    	pip install git-remote-codecommit
+                      git clone codecommit::${AWS_REGION}://${OrganisationConfigurationCodeCommitName} --branch ${BranchName}
+                      # ls -R -lsa
+
+                      cd ${OrganisationConfigurationCodeCommitName}
+                      echo "current directory is $(pwd)"
+
+                      HEAD_COMMIT_ID=$(git show -s HEAD --pretty=format:%H)
+                      echo "HEAD_COMMIT_ID is $HEAD_COMMIT_ID"
+
+                      orgtoolconfigure reverse-setup --template-dir "../org-tool/spec_init_data" --output-dir "./organization/.orgtool/root"  --master-account-id "${ACCOUNT_ID}" --org-access-role "${OrgAccessRole}" --exec
+
+                      git add -A
+                      git commit -a -m "Organization configuration initializing"
+                      git push origin ${BranchName}
+
+                  fi
+
+                                   
             build:
               commands:
                 - |
-                  echo "build ..."                
-                  #bash ./awscc-orchestrator-${MasterAccountId}/prj/CF-foundation/CF-orga-foundation/scripts/awsorgs-reports.sh
-                  #bash ./awscc-orchestrator-${MasterAccountId}/prj/CF-foundation/CF-orga-foundation/scripts/awsorgs-dryrun.sh
-                  #bash ./awscc-orchestrator-${MasterAccountId}/prj/CF-foundation/CF-orga-foundation/scripts/awsorgs-apply.sh
+                  echo "build ..."
+                  cd $CODEBUILD_SRC_DIR
+                  if [ -d "./organization/.orgtool/root" ] 
+                  then
+                    echo "Organization found into the repo, then deploy the changes"
+                    echo "############ apply:"
+
+                    echo "##### run cmd: orgtoolaccounts create --config ./organization/.orgtool/root/config.yaml --exec"
+                    orgtoolaccounts create --config ./organization/.orgtool/root/config.yaml --exec
+
+                    echo "##### run cmd: orgtool organization --config ./organization/.orgtool/root/config.yaml --exec"
+                    orgtool organization --config ./organization/.orgtool/root/config.yaml --exec
+
+                    echo "##### run cmd: orgtoolaccounts update --config ./organization/.orgtool/root/config.yaml --exec"
+                    orgtoolaccounts update --config ./organization/.orgtool/root/config.yaml --exec
+
+                    echo "##### run cmd: orgtoolauth delegations --config ./organization/.orgtool/root/config.yaml --exec"
+                    orgtoolauth delegations --config ./organization/.orgtool/root/config.yaml --exec
+
+                  fi
+
             post_build:
               commands:
                 - |
@@ -236,7 +293,7 @@ Resources:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       RestartExecutionOnUpdate: false
-      Name: !Sub ${AWS::StackName}-orgformationcodepipeline
+      Name: orgformationcodepipeline
       RoleArn: !GetAtt OrgFormationCodePipelineRole.Arn
       ArtifactStore:
         Type: S3
@@ -256,7 +313,7 @@ Resources:
                 - Name: SourceArtifact
               Configuration:
                 OutputArtifactFormat: CODEBUILD_CLONE_REF
-                BranchName: master
+                BranchName: !Ref BranchName
                 RepositoryName: !GetAtt OrganisationConfigurationCodeCommit.Name
                 PollForSourceChanges: true
               RunOrder: 1
@@ -279,6 +336,75 @@ Resources:
               RunOrder: 1
 ############# Pipeline
 
+
+################# Custom ressource management S3 BUcket
+  EmptyS3BucketOnDeletionLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: LoggingPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+        - PolicyName: S3Policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:List*
+                  - s3:DeleteObject
+                Resource: "*"
+  EmptyS3BucketOnDeletionLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Code:
+        ZipFile: |
+          import cfnresponse
+          import boto3
+          def handler(event, context):
+              print(event)
+              print('boto version ' + boto3.__version__)
+              # Globals
+              responseData = {}
+              ResponseStatus = cfnresponse.SUCCESS
+              s3bucketName = event['ResourceProperties']['s3bucketName']
+              if event['RequestType'] == 'Create':
+                  responseData['Message'] = "Resource creation successful!"
+              elif event['RequestType'] == 'Update':
+                  responseData['Message'] = "Resource update successful!"
+              elif event['RequestType'] == 'Delete':
+                  # Need to empty the S3 bucket before it is deleted
+                  s3 = boto3.resource('s3')
+                  bucket = s3.Bucket(s3bucketName)
+                  bucket.objects.all().delete()
+                  responseData['Message'] = "Resource deletion successful!"
+              cfnresponse.send(event, context, ResponseStatus, responseData)
+      Handler: index.handler
+      Runtime: python3.7
+      Role: !GetAtt EmptyS3BucketOnDeletionLambdaExecutionRole.Arn
+  EmptyArtifactsS3BucketOnDeletionCustomResource:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !GetAtt EmptyS3BucketOnDeletionLambdaFunction.Arn
+      s3bucketName: !Ref ArtifactsS3Bucket
+################# Custom ressource management S3 BUcket
+
+Outputs:
   OutputStackName:
     Description: Created stack name
     Value: !Ref AWS::StackName

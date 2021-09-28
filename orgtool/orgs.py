@@ -640,16 +640,17 @@ def set_ou_tags(ou, log, args, ou_spec, org_client):
 
     #tag_spec = get_tag_spec_for_ou_path(ou['Path'], ou_spec['organizational_units'], log)
     ou_tags = org_client.list_tags_for_resource(ResourceId=ou['Id'])['Tags']
-    log.debug('tag_spec for OU "{}":\n{}'.format(
+    log.info('tag_spec for OU "{}":\n{}'.format(
         ou['Name'],
         yamlfmt(tag_spec),
     ))
-    log.debug('ou_tags for OU "{}":\n{}'.format(
+    log.info('ou_tags for OU "{}":\n{}'.format(
         ou['Name'],
         yamlfmt(ou_tags),
     ))
     if sorted_tags(ou_tags) != sorted_tags(tag_spec):
-        log.debug('Deployed tags != tag-spec. So updating tags for OU "{}":\n{}'.format(
+        log.warn("New feature for tagging OUs - fork from aws-orgs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
+        log.info('Updating tags for OU "{}":\n{}'.format(
             ou['Name'],
             string_differ(yamlfmt(ou_tags), yamlfmt(tag_spec)),
         ))
@@ -667,7 +668,7 @@ def main():
 def core(args):
     log = get_logger(args)
     log.debug(args)
-    log.warn("Updated code - Laurent Delhomme AWS June 2020")
+    log.warn("Updated code from aws-orgs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     # log.warn("File common.yaml -> move_unmanaged_account: True|False - Config to control if unmanaged account move to default OU")
     # log.warn("File orgs.py --> Manage OU unique key by path instead of name to allow OU with same name in different path")
     # log.warn("File orgs.py --> Manage OU recursive creation (need to reload deployed[""ou""] after new OU created)")

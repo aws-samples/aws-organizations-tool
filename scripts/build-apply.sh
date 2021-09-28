@@ -1,13 +1,16 @@
 #!/bin/bash
 
+
 echo "############ apply:"
-set -e
 
-echo "##### run cmd: orgtool organization --config ./organization/.orgtool/config.yaml --exec"
-orgtool organization --config ./organization/.orgtool/config.yaml --exec
+echo "##### run cmd: orgtoolaccounts create --config ./organization/.orgtool/root/config.yaml --exec"
+orgtoolaccounts create --config ./organization/.orgtool/root/config.yaml --exec
 
-echo "##### run cmd: awsaccounts create --config ./organization/.orgtool/config.yaml --exec"
-awsaccounts create --config ./organization/.orgtool/config.yaml --exec
+echo "##### run cmd: orgtool organization --config ./organization/.orgtool/root/config.yaml --exec"
+orgtool organization --config ./organization/.orgtool/root/config.yaml --exec
 
-echo "##### run cmd: awsaccounts update --config ./organization/.orgtool/config.yaml --exec"
-awsaccounts update --config ./organization/.orgtool/config.yaml --exec
+echo "##### run cmd: orgtoolaccounts update --config ./organization/.orgtool/root/config.yaml --exec"
+orgtoolaccounts update --config ./organization/.orgtool/root/config.yaml --exec
+
+echo "##### run cmd: orgtoolauth delegations --config ./organization/.orgtool/root/config.yaml --exec"
+orgtoolauth delegations --config ./organization/.orgtool/root/config.yaml --exec

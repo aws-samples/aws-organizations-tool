@@ -1,7 +1,7 @@
 ---
 
 # orgtool installation must be greater than or eqaul to this version number.
-minimum_version: '0.3.4'
+minimum_version: '0.9.0'
 
 # orgtool configuration parameters common to all operations.
 

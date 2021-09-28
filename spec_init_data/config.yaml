@@ -2,7 +2,7 @@
 
 # Path to yaml spec files directory.  Any yaml files under this dirctory
 # (recursive) are parsed as spec files.
-spec_dir: '--spec_dir--'
+spec_dir: '--/spec.d'
 
 # An AWS role name which permits cross account access to all accounts.
 org_access_role: '--org_access_role--'
