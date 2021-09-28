@@ -463,10 +463,54 @@ organizational_units:
 To create a distributed configuration, you can use the orgtool CLI command, ```orgtoolconfigure distributed-config create```
 
 ```
-orgtoolconfigure distributed-config create --template-config org-tool/spec_init_data/config.yaml --child-config organization/.orgtool/dist1/config.yaml --prefix dist1 --config organization/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root --exec [-q] [-d|-dd]
+orgtoolconfigure distributed-config create --template-config spec_init_data/config.yaml --child-config organization/.orgtool/dist1/config.yaml --prefix dist1 --config organization/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root --exec [-q] [-d|-dd]
 ```
 
 Like for any changes, you will commit the changes to trigger the AWS CodePipeline, then the AWS CodeBuild to make this changes applied to your organization.
+
+Using distributed configuration, you can create templated nested configuration as it is shared into ``spec_init_data.entity`` where you will find a configuration containing a list of OUs.
+
+```
+---
+# Organizational Unit Specification.
+#
+# This specification maps the Organization's structure and assigns policies and
+# accounts to organizational units.
+#
+# Each organizational_unit spec (OU) has the following attributes:
+#   Name (str):     The name of the OU (required)
+#   Ensure (str):   One of 'present' (default) or 'absent'.  Setting to 
+#                   'absent' will cause the OU to be deleted but
+#                   only if no accounts are still assigned to the OU.
+#   Accounts (list(str)): 
+#                   List of account names assigned to this OU.
+#   SC_Policies (list(str)): 
+#                   List of Service Control Policies attached to this OU.
+#   Child_OU (list(organizational_unit)):
+#                   List of child Organizational Units (recursive structure).
+#   IncludeConfigPath (string):
+#                   Path to the config file of an orgtool configuration to include here for the tree and merge for the Accounts and SCPs
+#                   The Name of OU is equal to the name of the upper OU in the included configuration 
+#   MountingOUPath (string):
+#                   For an included configuration, this is the reference to the mounting point path into the OUs tree.
+#                   This exist only if the upper name of the tree is not "root". if not, raise an exception
+#                   The upper name of the tree is equal to the OU name of the mointing point
+#   PrefixRequired:
+#                   Only used with IncludeConfigPath.
+#                   Prefix value to use to validate naming convention for included SCP name
+
+
+organizational_units:
+- Name: Name
+  MountingOUPath: MountingOUPath
+  Child_OU:
+  - Name: admin       # admin OU where tool and audit account are located
+  - Name: managed     # managed OU where accounts striclty compliant are located 
+  - Name: unmanaged   # unmanaged OU for account not able to sustain strict compliancy
+  - Name: trash       # trash OU for account to be decomissioned definitally
+  - Name: recycled    # recycled OU for account to be reused
+```
+
 
 ## Conclusion:
 
