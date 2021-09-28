@@ -13,4 +13,5 @@ venv
 venv/*
 __*
 /automation/source.zip
+source.zip
 test.py
