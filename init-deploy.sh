@@ -30,16 +30,18 @@ run_init_deploy() {
     uuid=$(od -x /dev/urandom | head -1 | awk '{OFS="-"; print $2$3,$4,$5,$6,$7$8$9}')
     bucket_name="tmp-${uuid//-/}"
     aws s3 mb s3://$bucket_name
-
-    echo "zip ./README.md"
-    zip source.zip $SCRIPT_DIR/README.md
+    
+    echo "zip source.zip ./automation ./orgtool ./spec_init* *.py README.* LICENSE *.sh -r"
+    cd $SCRIPT_DIR
+    echo "current directory is $(pwd)"
+    zip source.zip ./automation ./orgtool ./spec_init* *.py README.* LICENSE *.sh -r
     aws s3 cp ./source.zip s3://$bucket_name
 
 
     echo "Deploy orgformation stack with OrgAccessRoleName=$org_access_role_name"
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
-        --template-file $SCRIPT_DIR/orgformation.yaml \
+        --template-file $SCRIPT_DIR/automation/orgformation.yaml \
         --stack-name "orgformation" \
         --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM \
         --parameter-overrides \
