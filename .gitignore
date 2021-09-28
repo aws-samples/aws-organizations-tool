@@ -11,3 +11,6 @@ output_orgtool
 output_orgtool/*
 venv
 venv/*
+__*
+/automation/source.zip
+test.py

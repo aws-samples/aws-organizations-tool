@@ -5,21 +5,21 @@
 AWS Organization.
 
 Usage:
-  orgtoolauth (users|delegations|local-users|report)    [--config FILE]
-                                                        [--spec-dir PATH] 
-                                                        [--master-account-id ID]
-                                                        [--auth-account-id ID]
-                                                        [--org-access-role ROLE]
-                                                        [--disable-expired]
-                                                        [--opt-ttl HOURS]
-                                                        [--users --roles --credentials]
-                                                        [--account NAME] [--full]
-                                                        [--exec] [-q] [-d|-dd]
-  awsauth (--help|--version)
+  orgtoolauth (users|delegations|local-users|report) [--config FILE]
+                                                     [--spec-dir PATH] 
+                                                     [--master-account-id ID]
+                                                     [--auth-account-id ID]
+                                                     [--org-access-role ROLE]
+                                                     [--disable-expired]
+                                                     [--opt-ttl HOURS]
+                                                     [--users --roles --credentials]
+                                                     [--account NAME] [--full]
+                                                     [--exec] [-q] [-d|-dd]
+  orgtoolauth (--help|--version)
 
 Modes of operation:
   users         Provision users, groups and group membership.
-  delegation    Provision policies and roles for cross account access.
+  delegations   Provision policies and roles for cross account access.
   local-users   Provision local IAM users and policies in accounts.
   report        Display provisioned resources.
 
@@ -1007,6 +1007,7 @@ def main():
 def core(args):
     log = get_logger(args)
     log.debug("%s: args:\n%s" % (__name__, args))
+    log.warn("Updated code from aws-orgs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     args = load_config(log, args)
     auth_spec = validate_spec(log, args)
 
@@ -1059,7 +1060,7 @@ def core(args):
 
     if args['users']:
         if args['--disable-expired']:
-            expire_users(log, args, deployed, auth_spec, credentials)
+            expire_users(log, args, deployed, auth_spec, credentials=None)
         else:
             create_users(auth_credentials, args, log, deployed, auth_spec)
             create_groups(auth_credentials, args, log, deployed, auth_spec)

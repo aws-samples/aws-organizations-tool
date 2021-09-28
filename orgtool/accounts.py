@@ -328,6 +328,7 @@ def main():
 def core(args):
     log = get_logger(args)
     log.debug(args)
+    log.warn("Updated code from aws-orgs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     args = load_config(log, args)
     credentials = get_assume_role_credentials(
             args['--master-account-id'],

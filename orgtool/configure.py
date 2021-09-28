@@ -206,8 +206,15 @@ def distributed_config_create(args, log, org_spec):
     child_org_spec['master_account_id'] = org_spec['master_account_id']
     child_org_spec['auth_account_id'] = org_spec['master_account_id']
     
-    child_org_spec['organizational_units'][0]['Name'] = args['--ou-name']
-    child_org_spec['organizational_units'][0]['MountingOUPath'] = args['--ou-path']
+    if 'organizational_units' in child_org_spec and child_org_spec['organizational_units']:
+        child_org_spec['organizational_units'][0]['Name'] = args['--ou-name']
+        child_org_spec['organizational_units'][0]['MountingOUPath'] = args['--ou-path']
+    else:
+        child_root_ou = {}
+        child_root_ou['Name'] = args['--ou-name']
+        child_root_ou['MountingOUPath'] = args['--ou-path']
+        child_org_spec['organizational_units'] = []
+        child_org_spec['organizational_units'] += [child_root_ou]
     # --------------- ADD TO CHILD CONFIG
     
 
@@ -897,7 +904,7 @@ def core(args, log=None):
     if not log:
         log = get_logger(args)
     log.debug(args)
-
+    log.warn("New feature for IaC API to manipulate the configuration - fork from aws-orgs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     if args['reverse-setup']: 
         reverse_setup(args, log)
         log.info("reverse-setup done!")

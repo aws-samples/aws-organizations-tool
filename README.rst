@@ -10,8 +10,7 @@ This tool is a fork from orgtool, published by Ashley Gould <agould@ucop.edu> at
 Features
 --------
 
-- Ensure state of AWS Organizations and IAM resourses per `yaml`_ formatted 
-  specification files.
+- Ensure state of AWS Organizations and IAM resourses per `yaml`_ formatted specification files.
 - Configure AWS Organizations resources:
 
   - organizational units
@@ -24,30 +23,34 @@ Features
   - customer managed IAM policies
   - IAM roles and trust delegation in organization accounts
 
-- Manage the organization model with includes of distributed aws yaml configuration 
+- New features:
 
-- CLI to manipulate and change the configuration files
-
-- Generate configuration from an existing organisation
+  - Manage the organization with a combinaison of includes of distributed sub aws organization configuration
+  - CLI to manipulate and change the configuration files
+  - Generate configuration from an existing organisation
+  - Support of resource tagging OUs and accounts.  
 
 
 
 
 Installation
 ------------
-
-Editable copy in venv::
+Editable copy::
 
   git clone https://gitlab.aws.dev/delhom/org-tool
-  python3 -m venv ./org-tool/venv
-  source source ./org-tool/venv/bin/activate
-  sudo -H pip install --upgrade pip
-  sudo -H pip install -e ./org-tool/
+  pip install -e org-tool/
+
+Editable copy using virtual environment (recommended)::
+
+  git clone https://gitlab.aws.dev/delhom/org-tool
+  python -m venv ./org-tool/venv
+  source ./org-tool/venv/bin/activate
+  pip install -e ./org-tool/
 
 
 Uninstall::
 
-  sudo -H pip uninstall orgtool
+  pip uninstall orgtool
 
 
 Configuration quick start
@@ -121,7 +124,7 @@ option for usage documentation.
 :Author:
     Laurent Delhomme (delhom@amazon.com)
 
-:Version: 0.0.1
+:Version: 0.9.1
 
 
 
