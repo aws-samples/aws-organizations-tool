@@ -180,12 +180,15 @@ def create_users(credentials, args, log, deployed, auth_spec):
     """
     iam_client = boto3.client('iam', **credentials)
     iam_resource = boto3.resource('iam', **credentials)
-    for u_spec in auth_spec['users']:
+    for u_spec in auth_spec['users']:        
         tags = [
             {'Key': 'cn',  'Value': u_spec['CN']},
-            {'Key': 'email', 'Value': u_spec['Email']},
-            {'Key': 'request_id',  'Value': u_spec['RequestId']},
+            {'Key': 'email', 'Value': u_spec['Email']}
         ]
+        # RequestId is not required
+        if 'RequestId' in u_spec and u_spec['RequestId']:
+            tags += [ {'Key': 'request_id',  'Value': u_spec['RequestId']} ]
+
         path = munge_path(auth_spec['default_path'], u_spec)
         deployed_user = lookup(deployed['users'], 'UserName', u_spec['Name'])
         if deployed_user:
@@ -601,10 +604,15 @@ def manage_local_user_in_accounts(
 
     account_name = account['Name']
     log.debug('account: %s, local user: %s' % (account_name, lu_spec['Name']))
+
     tags = [
-        {'Key': 'contact_email', 'Value': lu_spec['ContactEmail']},
-        {'Key': 'request_id',  'Value': lu_spec['RequestId']},
-    ]   
+        {'Key': 'contact_email', 'Value': lu_spec['ContactEmail']}
+    ]
+            
+    # RequestId is not required
+    if 'RequestId' in lu_spec and lu_spec['RequestId']:
+        tags += [ {'Key': 'request_id',  'Value': lu_spec['RequestId']} ]
+
     path_spec = "/{}/service/{}/".format(auth_spec['default_path'], lu_spec['Service'])
     credentials = get_assume_role_credentials(account['Id'], args['--org-access-role'])
     if isinstance(credentials, RuntimeError):

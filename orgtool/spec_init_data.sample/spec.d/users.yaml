@@ -18,14 +18,11 @@ users:
   Ensure: present
   CN: Paul
   Email: paul@example.com
-  # RequestId: RIT0012340
 - Name: jane
   Ensure: present
   CN: Jane
   Email: jane@example.com
-  # RequestId: RIT0012341
 - Name: John
   Ensure: present
   CN: John
   Email: john@example.com
-  RequestId: RIT0012342
