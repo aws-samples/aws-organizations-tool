@@ -640,11 +640,11 @@ def set_ou_tags(ou, log, args, ou_spec, org_client):
 
     #tag_spec = get_tag_spec_for_ou_path(ou['Path'], ou_spec['organizational_units'], log)
     ou_tags = org_client.list_tags_for_resource(ResourceId=ou['Id'])['Tags']
-    log.info('tag_spec for OU "{}":\n{}'.format(
+    log.debug('tag_spec for OU "{}":\n{}'.format(
         ou['Name'],
         yamlfmt(tag_spec),
     ))
-    log.info('ou_tags for OU "{}":\n{}'.format(
+    log.debug('ou_tags for OU "{}":\n{}'.format(
         ou['Name'],
         yamlfmt(ou_tags),
     ))
@@ -657,7 +657,7 @@ def set_ou_tags(ou, log, args, ou_spec, org_client):
         if args['--exec']:
             update_ou_tags(org_client, ou, ou_tags, tag_spec, log)
     else:
-        log.debug('Deployed tags == tag-spec. So doing nothing for OU "{}".'.format(
+        log.info('Deployed tags == tag-spec. So doing nothing for OU "{}".'.format(
             ou['Name']))
 
 
