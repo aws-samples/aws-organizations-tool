@@ -2,6 +2,7 @@
 *.swo
 *.pyc
 *.egg-info
+*.vscode
 build/
 dist/
 docs/_build
