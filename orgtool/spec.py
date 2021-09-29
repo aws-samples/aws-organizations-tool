@@ -160,7 +160,7 @@ def validate_spec(log, args, recusive=True):
     """
     Load all spec files in spec_dir and validate against spec schema
     """
-    log.warn("New feature for recursive distributed configuration - fork from aws-orgs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
+    log.info("New feature for recursive distributed configuration - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     # validate spec_files
     spec_dir = args['--spec-dir']
     if not os.path.isdir(spec_dir):

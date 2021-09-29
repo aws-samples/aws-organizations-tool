@@ -31,8 +31,8 @@
 local_users:
 - Name: local-service-user
   Ensure: present
-  ContactEmail: test@ucop.edu
-  RequestId: RIT00000123
+  ContactEmail: test@test.com
+  # RequestId: RIT00000123
   Description: Local service user 
   Service: ses
   Account:

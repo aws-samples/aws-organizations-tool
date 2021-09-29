@@ -639,26 +639,30 @@ def set_ou_tags(ou, log, args, ou_spec, org_client):
     tag_spec = transform_tag_spec_into_list_of_dict(tag_spec)
 
     #tag_spec = get_tag_spec_for_ou_path(ou['Path'], ou_spec['organizational_units'], log)
-    ou_tags = org_client.list_tags_for_resource(ResourceId=ou['Id'])['Tags']
+    ou_tags = {}
+    if str(ou['Id']).startswith('dryrun-'):
+        log.debug('In dryrun mode for a new OU, no need to get the existing tags')
+    else:
+        ou_tags = org_client.list_tags_for_resource(ResourceId=ou['Id'])['Tags']
     log.debug('tag_spec for OU "{}":\n{}'.format(
-        ou['Name'],
+        ou_spec['Path'],
         yamlfmt(tag_spec),
     ))
     log.debug('ou_tags for OU "{}":\n{}'.format(
-        ou['Name'],
+        ou_spec['Path'],
         yamlfmt(ou_tags),
     ))
     if sorted_tags(ou_tags) != sorted_tags(tag_spec):
-        log.warn("New feature for tagging OUs - fork from aws-orgs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
+        log.info("New feature for tagging OUs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
         log.info('Updating tags for OU "{}":\n{}'.format(
-            ou['Name'],
+            ou_spec['Path'],
             string_differ(yamlfmt(ou_tags), yamlfmt(tag_spec)),
         ))
         if args['--exec']:
             update_ou_tags(org_client, ou, ou_tags, tag_spec, log)
     else:
-        log.info('Deployed tags == tag-spec. So doing nothing for OU "{}".'.format(
-            ou['Name']))
+        log.debug('Deployed tags == tag-spec. So doing nothing for OU "{}".'.format(
+            ou_spec['Path']))
 
 
 def main():
@@ -668,10 +672,7 @@ def main():
 def core(args):
     log = get_logger(args)
     log.debug(args)
-    log.warn("Updated code from aws-orgs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
-    # log.warn("File common.yaml -> move_unmanaged_account: True|False - Config to control if unmanaged account move to default OU")
-    # log.warn("File orgs.py --> Manage OU unique key by path instead of name to allow OU with same name in different path")
-    # log.warn("File orgs.py --> Manage OU recursive creation (need to reload deployed[""ou""] after new OU created)")
+    log.info("Laurent Delhomme <delhom@amazon.com> AWS June 2020")
 
     args = load_config(log, args)
     credentials = get_assume_role_credentials(args['--master-account-id'], args['--org-access-role'])
@@ -687,6 +688,11 @@ def core(args):
         
 
     if args['report']:
+        log.info("To get files, use the command orgtoolconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]")
+        log.info("The package provide a template for this purpose located into the folder 'spec_init_data.reverse'")
+        log.info("The output files will contain the extract of OUs, SCPs and Accounts")
+        log.info("Other resources (delegation, users, local_users ...) will not be updated by the exploration of the organization")
+
         header = 'Provisioned Organizational Units in Org:'
         overbar = '_' * len(header)
         log.info("\n%s\n%s" % (overbar, header))
@@ -731,7 +737,7 @@ def core(args):
                         # append unmanaged accounts to default_ou
                         place_unmanged_accounts(org_client, args, log, deployed, unmanaged, org_spec['default_ou'])
                     else:
-                        log.warn("Updated code, move_unmanaged_account set to False therefore unmanged account not moved to default OU")
+                        log.info("Updated code, move_unmanaged_account set to False therefore unmanged account not moved to default OU - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
 
             if key == 'policies':
                 unmanaged= [a['Name'] for a in deployed[key] if a['Name'] not in managed[key]]
@@ -751,19 +757,29 @@ def core(args):
                         protection += 1
                         if protection > protection_max:
                             log.critical("Throw exception as a protection of the program. Too many loops to remove unmanaged OUs.")
-                            sys.exit(1)
+                            if args['--exec']:
+                                sys.exit(1)
+                            else:
+                                log.info("dryrun - then continu - not change will be applied")
 
                         for i, item in enumerate(unmanaged):
-                            if 'Child_OU' in unmanaged[i] and len(unmanaged[i]['Child_OU']) != 0:
-                                 log.debug("Not deleting OU %s because contains OU %s" % (unmanaged[i]['Path'], ', '.join(unmanaged[i]['Child_OU'])))
+                            log.info("Deleting OU %s" % unmanaged[i]['Path'])
 
-                            elif 'Accounts' in unmanaged[i] and len(unmanaged[i]['Accounts']) != 0:
-                                log.critical("Throw exception because not deleting OU %s because contains accounts %s" % (unmanaged[i]['Path'], ', '.join(unmanaged[i]['Accounts'])))
-                                sys.exit(1)
-                                
+                            if 'Child_OU' in unmanaged[i] and len(unmanaged[i]['Child_OU']) != 0:
+                                 log.critical("Not able to delete OU %s because contains OU %s" % (unmanaged[i]['Path'], ', '.join(unmanaged[i]['Child_OU'])))
+
                             else:
+
+                                if 'Accounts' in unmanaged[i] and len(unmanaged[i]['Accounts']) != 0:
+                                    log.critical("Not able to delete OU %s because contains accounts %s" % (unmanaged[i]['Path'], ', '.join(unmanaged[i]['Accounts'])))
+                                    log.critical("Move the account before deleting OU")
+                                    if args['--exec']:
+                                        log.critical("Then Exit in --exec mode")
+                                        sys.exit(1)
+                                    else:
+                                        log.info("dryrun - then continu - not change will be applied")
+
                                 # then delete the OU
-                                log.info("Deleting OU %s" % unmanaged[i]['Path'])
                                 if args['--exec']:
                                     org_client.delete_organizational_unit(OrganizationalUnitId=unmanaged[i]['Id'])
                                 # update deployed structure

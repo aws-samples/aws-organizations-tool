@@ -17,7 +17,7 @@ policy_sets:
   Description: Access for application developers.
   Tags:
   - Key: jobfunctionrole
-    Value: True
+    Value: 'True'
   Policies:
   - PowerUserAccess
   - IAMReadOnlyAccess
@@ -25,7 +25,7 @@ policy_sets:
   Description: Access for testers
   Tags:
   - Key: jobfunctionrole
-    Value: True
+    Value: 'True'
   Policies:
   - ReadOnlyAccess
   - ReadS3Bucket

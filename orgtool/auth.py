@@ -1007,7 +1007,7 @@ def main():
 def core(args):
     log = get_logger(args)
     log.debug("%s: args:\n%s" % (__name__, args))
-    log.warn("Updated code from aws-orgs - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
+    log.info("Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     args = load_config(log, args)
     auth_spec = validate_spec(log, args)
 

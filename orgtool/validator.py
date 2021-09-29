@@ -300,7 +300,7 @@ CN:
   required: True
   type: string
 RequestId:
-  required: True
+  required: False
   type: string
 Ensure:
   required: False
@@ -356,7 +356,7 @@ ContactEmail:
   required: True
   type: string
 RequestId:
-  required: True
+  required: False
   type: string
 Description:
   required: False

@@ -247,7 +247,7 @@ Resources:
                       HEAD_COMMIT_ID=$(git show -s HEAD --pretty=format:%H)
                       echo "HEAD_COMMIT_ID is $HEAD_COMMIT_ID"
 
-                      orgtoolconfigure reverse-setup --template-dir "./spec_init_data" --output-dir "./organization/.orgtool/root"  --master-account-id "${ACCOUNT_ID}" --org-access-role "${OrgAccessRole}" --exec
+                      orgtoolconfigure reverse-setup --template-dir "./spec_init_data.reverse" --output-dir "./organization/.orgtool/root"  --master-account-id "${ACCOUNT_ID}" --org-access-role "${OrgAccessRole}" --exec
 
                       git add -A
                       git commit -a -m "Organization configuration initializing"

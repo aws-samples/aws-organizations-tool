@@ -25,7 +25,7 @@ def main():
     args = docopt(__doc__)
     errors = []
     source_dir = os.path.abspath(
-        pkg_resources.resource_filename(__name__, '../spec_init_data')
+        pkg_resources.resource_filename(__name__, '../spec_init_data.sample')
     )
     source_config_file = os.path.join(source_dir, 'config.yaml')
     source_spec_dir = os.path.join(source_dir, 'spec.d')
