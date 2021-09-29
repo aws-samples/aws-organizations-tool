@@ -35,7 +35,6 @@ organizational_units:
   Accounts: 
   - master-account 
   - central-auth
-  Policies:
   Child_OU:
   - Name: applications
     Accounts:

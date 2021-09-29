@@ -17,20 +17,20 @@ accounts:
   Email: master-account@example.com
   Alias: master
   Tags:
-    Owner: Yegamani Kumar
+    Owner: Paul
     Application: infrastructure
     Environment: production
 - Name: central-auth
   Email: central-auth@example.com
   Alias: auth
   Tags:
-    Owner: Yegamani Kumar
+    Owner: Paul
     Application: infrastructure
     Environment: production
 - Name: dev1
   Email: dev1@example.com
   Alias: dev1
   Tags:
-    Owner: Candy Jong
-    Application: fistua
+    Owner: John
+    Application: orgtool
     Environment: development

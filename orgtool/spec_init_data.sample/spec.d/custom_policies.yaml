@@ -5,11 +5,11 @@
 # which the policy is attached to least one group or delegation role.
 #
 #
-# Each custom policy spec (SCP) has the following attributes:
-#   Name (str):         The name of the SCP.
+# Each custom policy specification (CPS) has the following attributes:
+#   Name (str):         The name of the CPS.
 #   Description (str):  The policy description.
 #   Statement (list(dict)):  
-#                       List of IAM policy statements applied to the SCP.
+#                       List of IAM policy statements applied to the CPS.
 
 custom_policies:
 - PolicyName: UserSelfService

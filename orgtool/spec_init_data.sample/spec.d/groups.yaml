@@ -25,11 +25,11 @@ groups:
   - UserSelfService
 - Name: admins
   Members:
-  - ashley 
+  - paul 
 - Name: devops
   Members:
-  - kalila 
-  - dimna 
+  - jane 
+  - john 
 
 
 

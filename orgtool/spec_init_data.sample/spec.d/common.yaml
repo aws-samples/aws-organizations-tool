@@ -19,6 +19,11 @@ default_domain: example.com
 # explicitly assigned to an Organizational Unit are placed here.
 default_ou: root
 
+# Laurent DELHOMME, AWS, June 2020
+# Add new behavior to control if unmanaged account are moved to the default OU
+# Move unmanaged account to the default OU
+move_unmanaged_account: False
+
 # Default Organization Service Control Policy.  This is managed by AWS and
 # should not be modified or deleted.  This is attached to all Organizational
 # Units.
