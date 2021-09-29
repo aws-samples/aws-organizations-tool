@@ -4,7 +4,7 @@ Getting started with orgtool
 A configuration management tool set for AWS Organizations.
 
 NOTA:
-This tool is a fork from orgtool, published by Ashley Gould <agould@ucop.edu> at https://github.com/ucopacme/orgtool
+This tool is a fork from aws-orgs, published by Ashley Gould <agould@ucop.edu> at https://github.com/ucopacme/aws-orgs
 
 
 Features
@@ -25,7 +25,7 @@ Features
 
 - New features:
 
-  - Manage the organization with a combinaison of includes of distributed sub aws organization configuration
+  - Nested configurations : Manage the organization description with a combinaison of includes of distributed sub organization configuration
   - CLI to manipulate and change the configuration files
   - Generate configuration from an existing organisation
   - Support of resource tagging OUs and accounts.  
@@ -35,17 +35,18 @@ Features
 
 Installation
 ------------
-Editable copy::
-
-  git clone https://gitlab.aws.dev/delhom/org-tool
-  pip install -e org-tool/
-
 Editable copy using virtual environment (recommended)::
 
   git clone https://gitlab.aws.dev/delhom/org-tool
   python -m venv ./org-tool/venv
   source ./org-tool/venv/bin/activate
   pip install -e ./org-tool/
+
+
+Editable copy::
+
+  git clone https://gitlab.aws.dev/delhom/org-tool
+  pip install -e org-tool/
 
 
 Uninstall::
@@ -119,16 +120,14 @@ option for usage documentation.
   orgtoolloginprofile maryanne --reset
   orgtoolloginprofile maryanne --disable-expired --opt-ttl 48
 
+  orgtoolconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure account tag (add|update|remove) --config <path> --account-name <name> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
+  orgtoolconfigure validate --config <path> [--exec] [-q] [-d|-dd]
+  orgtoolconfigure report
+
 
 
 :Author:
     Laurent Delhomme (delhom@amazon.com)
 
 :Version: 0.9.1
-
-
-
-
-.. references
-
-.. _yaml: https://yaml.org/

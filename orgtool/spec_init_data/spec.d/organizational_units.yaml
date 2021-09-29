@@ -15,6 +15,19 @@
 #                   List of Service Control Policies attached to this OU.
 #   Child_OU (list(organizational_unit)):
 #                   List of child Organizational Units (recursive structure).
+#   IncludeConfigPath (string):
+#                   Path to the config file of an orgtool configuration to include here for the tree and merge for the Accounts and SCPs
+#                   The Name of OU is equal to the name of the upper OU in the included configuration 
+#   MountingOUPath (string):
+#                   For an included configuration, this is the reference to the mounting point path into the OUs tree.
+#                   This exist only if the upper name of the tree is not "root". if not, raise an exception
+#                   The upper name of the tree is equal to the OU name of the mointing point
+#   PrefixRequired:
+#                   Only used with IncludeConfigPath.
+#                   Prefix value to use to validate naming convention for included SCP name
+#   Tags (dict):    Tags to apply to the AWS account. The tag value can have
+#                   up to 256 characters.
+#                   Valid characters: a-z, A-Z, 0-9, and . : + = @ _ / - (hyphen)
 
 organizational_units:
 # the root OU must be defined
