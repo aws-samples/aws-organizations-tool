@@ -73,15 +73,15 @@
 </ul>
 <h2 id="installation">Installation</h2>
 <hr>
-<h3 id="editable-copy">Editable copy</h3>
-<pre><code>git clone https://gitlab.aws.dev/delhom/org-tool
-pip install -e org-tool/
-</code></pre>
 <h3 id="editable-copy-using-virtual-environment-recommended">Editable copy using virtual environment (recommended):</h3>
 <pre><code>git clone https://gitlab.aws.dev/delhom/org-tool
 python -m venv ./org-tool/venv
 source ./org-tool/venv/bin/activate
 pip install -e ./org-tool/
+</code></pre>
+<h3 id="editable-copy">Editable copy</h3>
+<pre><code>git clone https://gitlab.aws.dev/delhom/org-tool
+pip install -e org-tool/
 </code></pre>
 <h3 id="uninstall">Uninstall:</h3>
 <pre><code>pip uninstall orgtool
@@ -122,8 +122,8 @@ Manage AWS IAM user login profile.</p>
 <p>orgtoolconfigure</p>
 <ul>
 <li>Manage reverse enginering of an existing organization</li>
-<li>Provide CLI commande to update the AWS Organization <code>yaml</code> description.</li>
-<li>These CLI commands are recommanded for AWS Organization managment with code</li>
+<li>Provide CLI command to update the AWS Organization <code>yaml</code> description.</li>
+<li>These CLI commands are used for organization managment with code</li>
 </ul>
 </li>
 </ul>
@@ -136,15 +136,9 @@ orgtool organization --exec
 
 orgtoolaccounts report
 orgtoolaccounts create [--exec]
-orgtoolaccounts alias [--exec]
-orgtoolaccounts invite --account-id ID [--exec]
-
-
-orgtool-accessrole --master_id ID [--exec]
 
 orgtoolauth report
 orgtoolauth report --users
-orgtoolauth report --delegations
 orgtoolauth report --credentials --full
 orgtoolauth report --account ucpath-prod --users --full
 
@@ -152,16 +146,10 @@ orgtoolauth users [--exec]
 orgtoolauth delegations [--exec]
 orgtoolauth local-users [--exec]
 
-orgtoolloginprofile maryanne
-orgtoolloginprofile maryanne --new
-orgtoolloginprofile maryanne --reset
-orgtoolloginprofile maryanne --disable-expired --opt-ttl 48
-
-orgtoolconfigure reverse-setup --template-dir ./spec_init_data --output-dir ~/.orgtool/root [--force] --master-account-id 123456789012 --org-access-role OrgAdminRole [--exec] [-q] [-d|-dd]
+orgtoolconfigure reverse-setup --template-dir ./spec_init_data.reverse --output-dir ~/.orgtool/root [--force] --master-account-id 123456789012 --org-access-role OrgAdminRole [--exec] [-q] [-d|-dd]
 orgtoolconfigure distributed-config create --template-config ./org-tool/spec_init_data.entity/config.yaml --child-config ~/.orgtool/dist1/config.yaml [--prefix dist1] --config ~/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root [--exec] [-q] [-d|-dd]
 orgtoolconfigure organization-unit create --config ~/.orgtool/root --ou-path /root/test [--exec] [-q] [-d|-dd]
 orgtoolconfigure validate --config &lt;~/.orgtool/root [-q] [-d|-dd]
-orgtoolconfigure report
 </code></pre>
 <h1 id="iac-setup-into-an-existing-master-account-of-an-existing-aws-organization">IaC setup into an existing master account of an existing AWS Organization</h1>
 <p>The package provide the setup to initialize the deploy of an IaC pipeline into an existing AWS Organization. This use case helps customers started to use AWS Organization from the AW Console and wants to transition to an IaC pattern.</p>
@@ -357,6 +345,9 @@ done
 #   PrefixRequired:
 #                   Only used with IncludeConfigPath.
 #                   Prefix value to use to validate naming convention for included SCP name
+#   Tags (dict):    Tags to apply to the AWS account. The tag value can have
+#                   up to 256 characters.
+#                   Valid characters: a-z, A-Z, 0-9, and . : + = @ _ / - (hyphen)
 
 
 organizational_units:
@@ -402,8 +393,7 @@ orgtool.utils: INFO     organization-unit create done!
 <ol start="4">
 <li>Commit your changes:</li>
 </ol>
-<pre><code><code><div>    git add -A
-    git commit -a -m &quot;Add mytest OU under root&quot;
+<pre><code><code><div>    git commit -a -m &quot;Add mytest OU under root&quot;
     git push origin main
 </div></code></code></pre>
 <ol start="5">
@@ -415,7 +405,8 @@ orgtool.utils: INFO     organization-unit create done!
 <h2 id="step-6-use-advanced-features-to-create-a-distributed-configuration-nested-configuration-embedded-into-the-root-configuration">Step 6: Use advanced features to create a distributed configuration (Nested configuration embedded into the <code>root</code> configuration).</h2>
 <p>In large organization, you have some usecases required to create isolated organization units (including its sub-resources, OUs, Accounts, SCP, Delegations, ...) into the same AWS Organization. Some usecase delegate the managment of these isolated <code>sub organizations</code>. Then <code>orgtool</code>provide an advanced feature to create an AWS Organization configuration composed by nested configuration into a <code>root</code>config.</p>
 <p>The root configuration will have a pointer to the nested configuration, as bellow with the OU <code>dist1</code>:</p>
-<pre><code><code><div># Organizational Unit Specification.
+<pre><code><code><div>---
+# Organizational Unit Specification.
 #
 # This specification maps the Organization's structure and assigns policies and
 # accounts to organizational units.
@@ -441,6 +432,9 @@ orgtool.utils: INFO     organization-unit create done!
 #   PrefixRequired:
 #                   Only used with IncludeConfigPath.
 #                   Prefix value to use to validate naming convention for included SCP name
+#   Tags (dict):    Tags to apply to the AWS account. The tag value can have
+#                   up to 256 characters.
+#                   Valid characters: a-z, A-Z, 0-9, and . : + = @ _ / - (hyphen)
 
 
 organizational_units:
@@ -492,9 +486,52 @@ organizational_units:
   MountingOUPath: /root
 </div></code></code></pre>
 <p>To create a distributed configuration, you can use the orgtool CLI command, <code>orgtoolconfigure distributed-config create</code></p>
-<pre><code><code><div>orgtoolconfigure distributed-config create --template-config org-tool/spec_init_data/config.yaml --child-config organization/.orgtool/dist1/config.yaml --prefix dist1 --config organization/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root --exec [-q] [-d|-dd]
+<pre><code><code><div>orgtoolconfigure distributed-config create --template-config spec_init_data/config.yaml --child-config organization/.orgtool/dist1/config.yaml --prefix dist1 --config organization/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root --exec [-q] [-d|-dd]
 </div></code></code></pre>
 <p>Like for any changes, you will commit the changes to trigger the AWS CodePipeline, then the AWS CodeBuild to make this changes applied to your organization.</p>
+<p>Using distributed configuration, you can create templated nested configuration as it is shared into <code>spec_init_data.entity</code> where you will find a configuration containing a list of OUs.</p>
+<pre><code><code><div>---
+# Organizational Unit Specification.
+#
+# This specification maps the Organization's structure and assigns policies and
+# accounts to organizational units.
+#
+# Each organizational_unit spec (OU) has the following attributes:
+#   Name (str):     The name of the OU (required)
+#   Ensure (str):   One of 'present' (default) or 'absent'.  Setting to 
+#                   'absent' will cause the OU to be deleted but
+#                   only if no accounts are still assigned to the OU.
+#   Accounts (list(str)): 
+#                   List of account names assigned to this OU.
+#   SC_Policies (list(str)): 
+#                   List of Service Control Policies attached to this OU.
+#   Child_OU (list(organizational_unit)):
+#                   List of child Organizational Units (recursive structure).
+#   IncludeConfigPath (string):
+#                   Path to the config file of an orgtool configuration to include here for the tree and merge for the Accounts and SCPs
+#                   The Name of OU is equal to the name of the upper OU in the included configuration 
+#   MountingOUPath (string):
+#                   For an included configuration, this is the reference to the mounting point path into the OUs tree.
+#                   This exist only if the upper name of the tree is not &quot;root&quot;. if not, raise an exception
+#                   The upper name of the tree is equal to the OU name of the mointing point
+#   PrefixRequired:
+#                   Only used with IncludeConfigPath.
+#                   Prefix value to use to validate naming convention for included SCP name
+
+
+organizational_units:
+- Name: Name
+  MountingOUPath: MountingOUPath
+  Child_OU:
+  - Name: admin       # admin OU where tool and audit account are located
+  - Name: managed     # managed OU where accounts striclty compliant are located 
+  - Name: unmanaged   # unmanaged OU for account not able to sustain strict compliancy
+  - Name: trash       # trash OU for account to be decomissioned definitally
+  - Name: recycled    # recycled OU for account to be reused
+</div></code></code></pre>
+<p>You can use this template by runing the command bellow to create <code>dist2</code> nested configuration under <code>root</code>:</p>
+<pre><code><code><div>orgtoolconfigure distributed-config create --template-config spec_init_data.entity/config.yaml --child-config organization/.orgtool/dist2/config.yaml --prefix dist2 --config organization/.orgtool/root/config.yaml  --ou-name dist2 --ou-path /root --exec [-q] [-d|-dd]
+</div></code></code></pre>
 <h2 id="conclusion">Conclusion:</h2>
 <p><code>orgtool</code> is a powerfull tool to help customers to manage their AWS Organization with code. In collaboration with CodeCommit, CodePipeline and CodeBuild, customer build powerefull landing zone including the manage of large AWS Organization where many team share the same top level configuration and run independantly into their dedicated space.</p>
 <p>Author: Laurent Delhomme (<a href="mailto:delhom@amazon.com">delhom@amazon.com</a>)</p>
