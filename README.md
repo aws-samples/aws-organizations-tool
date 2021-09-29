@@ -27,12 +27,6 @@
 
 ## Installation
 ---
-### Editable copy
-
-    git clone https://gitlab.aws.dev/delhom/org-tool
-    pip install -e org-tool/
-
-
 ### Editable copy using virtual environment (recommended):
 
     git clone https://gitlab.aws.dev/delhom/org-tool
@@ -40,11 +34,14 @@
     source ./org-tool/venv/bin/activate
     pip install -e ./org-tool/
 
+### Editable copy
+
+    git clone https://gitlab.aws.dev/delhom/org-tool
+    pip install -e org-tool/
 
 ### Uninstall:
 
     pip uninstall orgtool
-
 
 ## Configuration quick start
 
@@ -77,8 +74,8 @@ See ``--help`` option for full usage.
 
 * orgtoolconfigure
     * Manage reverse enginering of an existing organization
-    * Provide CLI commande to update the AWS Organization ``yaml`` description.
-    * These CLI commands are recommanded for AWS Organization managment with code
+    * Provide CLI command to update the AWS Organization ``yaml`` description.
+    * These CLI commands are used for organization managment with code
 
 
 All commands execute in ``dry-run`` mode, by default.  Include the ``--exec``
@@ -312,6 +309,9 @@ To do so, you will edit the AWS Organization configuration files stored into the
 #   PrefixRequired:
 #                   Only used with IncludeConfigPath.
 #                   Prefix value to use to validate naming convention for included SCP name
+#   Tags (dict):    Tags to apply to the AWS account. The tag value can have
+#                   up to 256 characters.
+#                   Valid characters: a-z, A-Z, 0-9, and . : + = @ _ / - (hyphen)
 
 
 organizational_units:
@@ -380,6 +380,7 @@ In large organization, you have some usecases required to create isolated organi
 The root configuration will have a pointer to the nested configuration, as bellow with the OU ```dist1```:
 
 ```
+---
 # Organizational Unit Specification.
 #
 # This specification maps the Organization's structure and assigns policies and
@@ -406,6 +407,9 @@ The root configuration will have a pointer to the nested configuration, as bello
 #   PrefixRequired:
 #                   Only used with IncludeConfigPath.
 #                   Prefix value to use to validate naming convention for included SCP name
+#   Tags (dict):    Tags to apply to the AWS account. The tag value can have
+#                   up to 256 characters.
+#                   Valid characters: a-z, A-Z, 0-9, and . : + = @ _ / - (hyphen)
 
 
 organizational_units:

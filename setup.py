@@ -12,9 +12,9 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='org-tool',
     version=__version__,
-    description='Tools to manage AWS Organizations. nota: this is a fork from aws-orgs tool, published by Ashley Gould <agould@ucop.edu> at https://github.com/ucopacme/aws-orgs',
+    description='Tools to manage AWS Organizations with code',
     long_description=long_description,
-    url='https://gitlab.aws.dev/delhom/orgtool',
+    url='https://gitlab.aws.dev/delhom/org-tool',
     author='Laurent Delhomme',
     author_email='delhom@amazon.com',
     license='MIT',
