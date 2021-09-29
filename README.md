@@ -89,15 +89,9 @@ Run each of these with the '--help' option for usage documentation.
 
     orgtoolaccounts report
     orgtoolaccounts create [--exec]
-    orgtoolaccounts alias [--exec]
-    orgtoolaccounts invite --account-id ID [--exec]
-
-
-    orgtool-accessrole --master_id ID [--exec]
 
     orgtoolauth report
     orgtoolauth report --users
-    orgtoolauth report --delegations
     orgtoolauth report --credentials --full
     orgtoolauth report --account ucpath-prod --users --full
 
@@ -105,16 +99,10 @@ Run each of these with the '--help' option for usage documentation.
     orgtoolauth delegations [--exec]
     orgtoolauth local-users [--exec]
 
-    orgtoolloginprofile maryanne
-    orgtoolloginprofile maryanne --new
-    orgtoolloginprofile maryanne --reset
-    orgtoolloginprofile maryanne --disable-expired --opt-ttl 48
-
-    orgtoolconfigure reverse-setup --template-dir ./spec_init_data --output-dir ~/.orgtool/root [--force] --master-account-id 123456789012 --org-access-role OrgAdminRole [--exec] [-q] [-d|-dd]
+    orgtoolconfigure reverse-setup --template-dir ./spec_init_data.reverse --output-dir ~/.orgtool/root [--force] --master-account-id 123456789012 --org-access-role OrgAdminRole [--exec] [-q] [-d|-dd]
     orgtoolconfigure distributed-config create --template-config ./org-tool/spec_init_data.entity/config.yaml --child-config ~/.orgtool/dist1/config.yaml [--prefix dist1] --config ~/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root [--exec] [-q] [-d|-dd]
     orgtoolconfigure organization-unit create --config ~/.orgtool/root --ou-path /root/test [--exec] [-q] [-d|-dd]
     orgtoolconfigure validate --config <~/.orgtool/root [-q] [-d|-dd]
-    orgtoolconfigure report
 
 # IaC setup into an existing master account of an existing AWS Organization
 
@@ -363,7 +351,6 @@ orgtool.utils: INFO     organization-unit create done!
 4. Commit your changes:
 
 ```
-    git add -A
     git commit -a -m "Add mytest OU under root"
     git push origin main
 ```

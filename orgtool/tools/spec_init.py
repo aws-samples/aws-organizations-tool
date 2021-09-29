@@ -20,9 +20,20 @@ import shutil
 import pkg_resources
 from docopt import docopt
 
+import logging
+
 
 def main():
+
     args = docopt(__doc__)
+
+    log_level = logging.INFO
+    log_format = "%(name)s: %(levelname)-9s%(message)s"
+    logging.basicConfig(stream=sys.stdout, format=log_format, level=log_level)
+    log = logging.getLogger(__name__)
+    
+    log.info("Laurent Delhomme <delhom@amazon.com> AWS June 2020")
+
     errors = []
     source_dir = os.path.abspath(
         pkg_resources.resource_filename(__name__, '../spec_init_data.sample')
@@ -62,6 +73,8 @@ def main():
                 os.path.join(source_spec_dir, file),
                 target_spec_dir,
             )
+
+    log.info("Sample config created from {} to {}.".format(source_dir, target_config_dir))
 
     if errors:
         sys.exit('\n'.join(errors))
