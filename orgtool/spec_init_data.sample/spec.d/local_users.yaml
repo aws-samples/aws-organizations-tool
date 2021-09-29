@@ -32,7 +32,6 @@ local_users:
 - Name: local-service-user
   Ensure: present
   ContactEmail: test@test.com
-  # RequestId: RIT00000123
   Description: Local service user 
   Service: ses
   Account:
