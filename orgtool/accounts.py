@@ -282,7 +282,7 @@ def display_provisioned_accounts(log, deployed_accounts, status):
         header = '%s Accounts in Org:' % status.capitalize()
         overbar = '_' * len(header)
         log.info("\n%s\n%s\n" % (overbar, header))
-        fmt_str = "{:20}{:20}{:16}{}"
+        fmt_str = "{:40}{:50}{:20}{}"
         log.info(fmt_str.format('Name:', 'Alias', 'Id:', 'Email:'))
         for name in sorted_account_names:
             account = lookup(deployed_accounts, 'Name', name)
@@ -305,14 +305,17 @@ def s3_object_for_accounts(s3_account_bucket, object_key, deployed_accounts):
     """
     Post the deployed_accounts list to s3 bucket
     """
+    boto3.setup_default_session(region_name='us-west-1')
     s3_client = boto3.client('s3')
     list_buckets_response = s3_client.list_buckets()
     bucket_list = [a['Name'] for a in list_buckets_response['Buckets']]
     if s3_account_bucket not in bucket_list:
+        # s3_client.create_bucket(Bucket = s3_account_bucket, CreateBucketConfiguration = {'LocationConstraint':'us-west-1'})
         s3_client.create_bucket(
             ACL = 'private',
             Bucket = s3_account_bucket,
-            CreateBucketConfiguration = {'LocationConstraint':'us-west-2'})
+            CreateBucketConfiguration = {'LocationConstraint':'us-west-1'}
+        )
     s3_client.put_object(
 	Bucket = s3_account_bucket,
 	Key = object_key,
