@@ -36,6 +36,7 @@ run_init_deploy() {
     echo "current directory is $(pwd)"
     zip source.zip ./automation ./orgtool ./spec_init* *.py README.* LICENSE *.sh -r
     aws s3 cp ./source.zip s3://$bucket_name
+    rm -f source.zip
 
 
     echo "Deploy orgformation stack with OrgAccessRoleName=$org_access_role_name"
