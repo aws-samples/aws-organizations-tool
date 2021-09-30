@@ -904,7 +904,7 @@ def core(args, log=None):
     if not log:
         log = get_logger(args)
     log.debug(args)
-    log.info("New feature for IaC API to manipulate the configuration - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
+    log.info("New feature for IaC, CLI to manipulate the configuration - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     if args['reverse-setup']: 
         reverse_setup(args, log)
         log.info("reverse-setup done!")
