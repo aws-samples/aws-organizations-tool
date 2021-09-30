@@ -99,8 +99,8 @@ Run each of these with the '--help' option for usage documentation.
     orgtoolauth delegations [--exec]
     orgtoolauth local-users [--exec]
 
-    orgtoolconfigure reverse-setup --template-dir ./spec_init_data.reverse --output-dir ~/.orgtool/root [--force] --master-account-id 123456789012 --org-access-role OrgAdminRole [--exec] [-q] [-d|-dd]
-    orgtoolconfigure distributed-config create --template-config ./org-tool/spec_init_data.entity/config.yaml --child-config ~/.orgtool/dist1/config.yaml [--prefix dist1] --config ~/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root [--exec] [-q] [-d|-dd]
+    orgtoolconfigure reverse-setup --template-dir ./spec_init_data.blank --output-dir ~/.orgtool/root [--force] --master-account-id 123456789012 --org-access-role OrgAdminRole [--exec] [-q] [-d|-dd]
+    orgtoolconfigure distributed-config create --template-config ./spec_init_data.entity/config.yaml --child-config ~/.orgtool/dist1/config.yaml [--prefix dist1] --config ~/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root [--exec] [-q] [-d|-dd]
     orgtoolconfigure organization-unit create --config ~/.orgtool/root --ou-path /root/test [--exec] [-q] [-d|-dd]
     orgtoolconfigure validate --config <~/.orgtool/root [-q] [-d|-dd]
 
@@ -454,7 +454,7 @@ organizational_units:
 To create a distributed configuration, you can use the orgtool CLI command, ```orgtoolconfigure distributed-config create```
 
 ```
-orgtoolconfigure distributed-config create --template-config spec_init_data/config.yaml --child-config organization/.orgtool/dist1/config.yaml --prefix dist1 --config organization/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root --exec [-q] [-d|-dd]
+orgtoolconfigure distributed-config create --template-config spec_init_data.blank/config.yaml --child-config organization/.orgtool/dist1/config.yaml --prefix dist1 --config organization/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root --exec [-q] [-d|-dd]
 ```
 
 Like for any changes, you will commit the changes to trigger the AWS CodePipeline, then the AWS CodeBuild to make this changes applied to your organization.
@@ -505,7 +505,7 @@ organizational_units:
 You can use this template by runing the command bellow to create ``dist2`` nested configuration under ``root``:
 
 ```
-orgtoolconfigure distributed-config create --template-config spec_init_data.entity/config.yaml --child-config organization/.orgtool/dist2/config.yaml --prefix dist2 --config organization/.orgtool/root/config.yaml  --ou-name dist2 --ou-path /root --exec [-q] [-d|-dd]
+orgtoolconfigure distributed-config create --template-config ./spec_init_data.entity/config.yaml --child-config organization/.orgtool/dist2/config.yaml --prefix dist2 --config organization/.orgtool/root/config.yaml  --ou-name dist2 --ou-path /root --exec [-q] [-d|-dd]
 ```
 
 
