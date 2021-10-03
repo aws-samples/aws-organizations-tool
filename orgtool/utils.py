@@ -268,8 +268,14 @@ def scan_deployed_accounts(log, org_client):
     while "NextToken" in accounts and accounts["NextToken"]:
         accounts = org_client.list_accounts(NextToken=accounts["NextToken"])
         deployed_accounts += accounts["Accounts"]
-    # only return accounts that have an 'Name' key
-    return [d for d in deployed_accounts if "Name" in d]
+
+    # # # only return accounts that have an 'Name' key
+    # # return [d for d in deployed_accounts if "Name" in d]
+
+    # returrn all accounts, no filter. 
+    # The check have to be more strict and done outside of this function
+    return deployed_accounts
+
 
 
 def scan_deployed_tags_for_resource(log, org_client, ressource_id):
