@@ -48,7 +48,7 @@ from orgtool.utils import *
 from orgtool.spec import *
 
 
-def validate_accounts_unique_in_org(log, root_spec):
+def validate_accounts_unique_in_org_spec(log, root_spec):
     """
     Make sure accounts are unique across org
     """
@@ -68,11 +68,46 @@ def validate_accounts_unique_in_org(log, root_spec):
     unique = True
     for account, ou in list(map_accounts(root_spec).items()):
         if len(ou) > 1:
-            log.error("Account '%s' set in multiple OU: %s" % (account, ou))
+            log.error("Account '%s' set multiple time: %s" % (account, ou))
             unique = False
     if not unique:
-        log.error("Invalid org_spec: Do not assign accounts to multiple Organizatinal Units")
+        log.critical("Invalid org_spec: Account name should be unique in the org definition.")
         sys.exit(1)
+
+def validate_accounts_unique_in_org_deployed(log, deployed):
+    """
+    Make sure accounts are unique across existing org
+    """
+    # check for deployed[accounts]
+    duplicate = False
+    duplicate_values = []
+    for account in deployed['accounts']:
+        if account['Name'] not in duplicate_values:
+            accounts = [a for a in deployed['accounts'] if a['Name'] == account['Name']]
+            count = len(accounts)
+            if count > 1:
+                duplicate = True
+                duplicate_values.append(account['Name'])
+                account_ids = [ sub['Id'] for sub in accounts ]
+                log.error("Invalide deployed org: Account name should be unique. Duplicate account name '%s' found for Ids %s." % (account['Name'], str(account_ids)))
+
+    # # check for deployed[ou] ##--> to stay commented for now
+    # accounts = []
+    # for ou in deployed['ou']:
+    #     if 'Accounts' in ou:
+    #         for account_name in ou['Accounts']:
+    #             accounts.append({'Name': account_name , 'Path': ou['Path']})
+    #             count = len([a for a in accounts if a['Name'] == account_name])
+    #             if count > 1:
+    #                 duplicate = True
+    #                 log.error("Invalide deployed org: Account name should be unique. Duplicate account name '%s' found" % (account_name))
+
+    if duplicate:
+        log.critical("Invalide deployed org")
+        log.critical("Duplicate account name found (%s). Org-Tool dosen't support multi account name in the same org." % (str(duplicate_values)))
+        log.info("You could rename the account by following the AWS documentation at https://aws.amazon.com/premiumsupport/knowledge-center/change-organizations-name/")
+        sys.exit(1)
+
 
 def enable_policy_type_in_root(org_client, root_id):
     """
@@ -685,7 +720,8 @@ def core(args):
         policies = scan_deployed_policies(org_client),
         accounts = scan_deployed_accounts(log, org_client),
         ou = scan_deployed_ou(log, org_client, root_id))
-        
+
+    validate_accounts_unique_in_org_deployed(log, deployed)        
 
     if args['report']:
         log.info("To get files, use the command orgtoolconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]")
@@ -698,6 +734,7 @@ def core(args):
         log.info("\n%s\n%s" % (overbar, header))
         display_provisioned_ou(org_client, log, deployed['ou'], '/root')
         display_provisioned_policies(org_client, log, deployed)
+
          
 
     if args['organization']:
@@ -705,7 +742,7 @@ def core(args):
         root_spec = lookup(org_spec['organizational_units'], 'Name', 'root')
         root_spec['Path'] = '/root'
         validate_master_id(org_client, org_spec)
-        validate_accounts_unique_in_org(log, root_spec)
+        validate_accounts_unique_in_org_spec(log, root_spec)
 
         managed = dict(
                 accounts = search_spec(root_spec, 'Accounts', 'Child_OU'),
