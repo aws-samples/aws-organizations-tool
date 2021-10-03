@@ -60,8 +60,7 @@ def get_master_account_id(log, args, config):
     else:
         log.debug("'master_account_id' not set in config_file or as cli option")
         try:
-            master_account_id = boto3.client('organizations'
-                    ).describe_organization()['Organization']['MasterAccountId']
+            master_account_id = boto3.client('organizations').describe_organization()['Organization']['MasterAccountId']
         except ClientError as e:
             log.critical("can not determine master_account_id: {}".format(e))
             sys.exit(1)
