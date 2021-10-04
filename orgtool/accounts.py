@@ -47,6 +47,7 @@ from botocore.exceptions import ClientError
 from docopt import docopt
 
 import orgtool
+import orgtool.orgs
 from orgtool.utils import *
 from orgtool.spec import *
 
@@ -174,8 +175,9 @@ def set_account_alias(account, log, args, account_spec, role):
     if not is_valid_account(account, account_spec):
         return  
     proposed_alias = lookup(account_spec['accounts'], 'Name', account['Name'], 'Alias')
-    if proposed_alias is None:
-         proposed_alias = account['Name'].strip().lower().replace(" ", "-")
+    # keep no aliases
+    # if proposed_alias is None:
+    #      proposed_alias = account['Name'].strip().lower().replace(" ", "-")
     credentials = get_assume_role_credentials(
             account['Id'], args['--org-access-role'])
     if isinstance(credentials, RuntimeError):
@@ -185,24 +187,28 @@ def set_account_alias(account, log, args, account_spec, role):
         iam_client = boto3.client('iam', **credentials)
     aliases = iam_client.list_account_aliases()['AccountAliases']
     log.debug('account_name: %s; aliases: %s' % (account['Name'], aliases))
-    if not aliases:
-        log.info("setting account alias to '%s' for account '%s'" %
-                (proposed_alias, account['Name']))
+    if not aliases and proposed_alias:
+        log.info("setting account alias to '%s' for account '%s'" % (proposed_alias, account['Name']))
         if args['--exec']:
             try:
                 iam_client.create_account_alias(AccountAlias=proposed_alias)
             except Exception as e:
                 log.error(e)
-    elif aliases[0] != proposed_alias:
-        log.info("resetting account alias for account '%s' to '%s'; "
-                "previous alias was '%s'" %
-                (account['Name'], proposed_alias, aliases[0]))
+        
+    elif aliases and len(aliases) > 0 and aliases[0] != proposed_alias:
+        log.info("remove account alias for account '%s'" % (account['Name']))
         if args['--exec']:
             iam_client.delete_account_alias(AccountAlias=aliases[0])
-            try:
-                iam_client.create_account_alias(AccountAlias=proposed_alias)
-            except Exception as e:
-                log.error(e)
+
+        if proposed_alias:
+            # remove alias
+            log.info("setting account alias to '%s' for account '%s'" % (proposed_alias, account['Name']))
+            if args['--exec']:
+                iam_client.delete_account_alias(AccountAlias=aliases[0])
+                try:
+                    iam_client.create_account_alias(AccountAlias=proposed_alias)
+                except Exception as e:
+                    log.error(e)
 
 
 def scan_invited_accounts(log, org_client):
@@ -343,6 +349,9 @@ def core(args):
     root_id = get_root_id(org_client)
     deployed_accounts = scan_deployed_accounts(log, org_client)
 
+    orgtool.orgs.validate_accounts_unique_in_org_deployed(log, deployed_accounts)        
+
+
     if args['report']:
         aliases = get_account_aliases(log, deployed_accounts, args['--org-access-role'])
         deployed_accounts = merge_aliases(log, deployed_accounts, aliases)
@@ -354,6 +363,7 @@ def core(args):
         return
 
     account_spec = validate_spec(log, args)
+    orgtool.orgs.validate_accounts_unique_in_org_spec(log, account_spec)
     validate_master_id(org_client, account_spec)
 
     if args['create']:

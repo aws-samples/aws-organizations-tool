@@ -60,6 +60,7 @@ from botocore.exceptions import ClientError
 from docopt import docopt
 
 import orgtool
+import orgtool.orgs
 from orgtool.utils import *
 from orgtool.spec import *
 from orgtool.loginprofile import *
@@ -1035,11 +1036,14 @@ def core(args):
         log.critical(auth_credentials)
         sys.exit(1)
     iam_client = boto3.client('iam', **auth_credentials)
+
+    deployed_accounts = scan_deployed_accounts(log, org_client)
+    orgtool.orgs.validate_accounts_unique_in_org_deployed(log, deployed_accounts)   
+
     deployed = dict(
             users = get_iam_objects(iam_client.list_users, 'Users'),
             groups = get_iam_objects(iam_client.list_groups, 'Groups'),
-            accounts = [a for a in scan_deployed_accounts(log, org_client)
-                    if a['Status'] == 'ACTIVE'])
+            accounts = [a for a in deployed_accounts if a['Status'] == 'ACTIVE'])
 
     if args['report']:
         if args['--account']:
