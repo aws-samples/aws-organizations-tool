@@ -142,7 +142,7 @@ def reverse_setup(args, log):
         accounts = scan_deployed_accounts(log, org_client),
         ou = scan_deployed_ou(log, org_client, root_id))
 
-    orgtool.orgs.validate_accounts_unique_in_org_deployed(log, deployed)
+    orgtool.orgs.validate_accounts_unique_in_org_deployed(log, deployed['accounts'])
     
     reverse_config = dict(
         organizational_units = reverse_ou(org_client, log, deployed, "/root", "FullAWSAccess"),

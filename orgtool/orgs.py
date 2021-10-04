@@ -74,16 +74,16 @@ def validate_accounts_unique_in_org_spec(log, root_spec):
         log.critical("Invalid org_spec: Account name should be unique in the org definition.")
         sys.exit(1)
 
-def validate_accounts_unique_in_org_deployed(log, deployed):
+def validate_accounts_unique_in_org_deployed(log, deployed_accounts):
     """
     Make sure accounts are unique across existing org
     """
     # check for deployed[accounts]
     duplicate = False
     duplicate_values = []
-    for account in deployed['accounts']:
+    for account in deployed_accounts:
         if account['Name'] not in duplicate_values:
-            accounts = [a for a in deployed['accounts'] if a['Name'] == account['Name']]
+            accounts = [a for a in deployed_accounts if a['Name'] == account['Name']]
             count = len(accounts)
             if count > 1:
                 duplicate = True
@@ -721,7 +721,7 @@ def core(args):
         accounts = scan_deployed_accounts(log, org_client),
         ou = scan_deployed_ou(log, org_client, root_id))
 
-    validate_accounts_unique_in_org_deployed(log, deployed)        
+    validate_accounts_unique_in_org_deployed(log, deployed['accounts'])        
 
     if args['report']:
         log.info("To get files, use the command orgtoolconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]")
@@ -742,6 +742,7 @@ def core(args):
         root_spec = lookup(org_spec['organizational_units'], 'Name', 'root')
         root_spec['Path'] = '/root'
         validate_master_id(org_client, org_spec)
+        
         validate_accounts_unique_in_org_spec(log, root_spec)
 
         managed = dict(
