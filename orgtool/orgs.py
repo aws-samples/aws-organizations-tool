@@ -46,7 +46,6 @@ import orgtool
 import orgtool.utils
 from orgtool.utils import *
 from orgtool.spec import *
-from copy import deepcopy
 
 
 def validate_accounts_unique_in_org_spec(log, root_spec):
@@ -158,7 +157,7 @@ def scan_deployed_policies(org_client):
 
     
 
-def build_deployed_ou_table(log, org_client, parent_name, parent_id, parent_path, parent_path_array, deployed_ou):
+def build_deployed_ou_table(log, org_client, parent_name, parent_id, parent_path, deployed_ou):
     # recusive sub function to build the 'deployed_ou' table
     response = org_client.list_organizational_units_for_parent( ParentId=parent_id)
     child_ou = response['OrganizationalUnits']
@@ -181,7 +180,6 @@ def build_deployed_ou_table(log, org_client, parent_name, parent_id, parent_path
                 Name = parent_name,
                 Id = parent_id,
                 Path = parent_path,
-                PathArray = parent_path_array,
                 Key = parent_id,
                 Child_OU = [ou['Name'] for ou in child_ou if 'Name' in ou],
                 Child_OU_Path = [(parent_path + '/' + ou['Name']) for ou in child_ou if 'Name' in ou],
@@ -190,19 +188,16 @@ def build_deployed_ou_table(log, org_client, parent_name, parent_id, parent_path
     else:
         for ou in deployed_ou:
             if ou['Path'] == parent_path:
-                ou['PathArray'] = parent_path_array
                 ou['Child_OU'] = [d['Name'] for d in child_ou]
                 ou['Child_OU_Path'] = [(parent_path + '/' + d['Name']) for d in child_ou]
                 ou['Accounts'] = [d['Name'] for d in accounts]
     for ou in child_ou:
-        PathArray = deepcopy(parent_path_array)
         ou['ParentId'] = parent_id
         ou['Path'] = parent_path + '/' + ou['Name']
-        ou['PathArray'] = PathArray.append(ou['Name'])
         ou['Key'] = parent_id + ':' + ou['Name']
         ou['Tags'] = org_client.list_tags_for_resource(ResourceId=ou['Id'])['Tags']
         deployed_ou.append(ou)
-        build_deployed_ou_table(log, org_client, ou['Name'], ou['Id'], parent_path + '/' + ou['Name'],ou['PathArray'], deployed_ou)
+        build_deployed_ou_table(log, org_client, ou['Name'], ou['Id'], parent_path + '/' + ou['Name'], deployed_ou)
 
 def scan_deployed_ou(log, org_client, root_id):
     """
@@ -211,7 +206,7 @@ def scan_deployed_ou(log, org_client, root_id):
     """
     # build the table 
     deployed_ou = []
-    build_deployed_ou_table(log, org_client, 'root', root_id, '/root', ['root'], deployed_ou)
+    build_deployed_ou_table(log, org_client, 'root', root_id, '/root', deployed_ou)
     log.debug('\n' + yamlfmt(deployed_ou))
     return deployed_ou
 
