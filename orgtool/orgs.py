@@ -800,10 +800,11 @@ def core(args):
                         protection += 1
                         if protection > protection_max:
                             log.critical("Throw exception as a protection of the program. Too many loops to remove unmanaged OUs.")
-                            if args['--exec']:
-                                sys.exit(1)
-                            else:
-                                log.info("dryrun - then continu - not change will be applied")
+                            sys.exit(1)
+                            # if args['--exec']:
+                            #                                 
+                            # else:
+                            #     log.info("dryrun - then continu - not change will be applied")
 
                         for i, item in enumerate(unmanaged):
                             log.info("Deleting OU %s" % unmanaged[i]['Path'])
