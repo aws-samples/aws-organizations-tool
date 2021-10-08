@@ -127,6 +127,16 @@ def validate_spec_file(log, spec_file, validator, errors):
         errors += 1
         return (None, errors)
 
+def validate_spec_dict(log, spec, validator, errors):
+
+    if validator.validate(spec):
+        return (spec, errors)
+    else:
+        log.error("schema validation failed for specification '{}'.".format(list(spec.keys())[0]))
+        log.debug('\n' + yamlfmt(spec))
+        log.debug("validator errors:\n{}".format(yamlfmt(validator.errors)))
+        errors += 1
+        return (None, errors)
 
 def validate_package_version(log, spec_dir):
     common_file_name = next(
