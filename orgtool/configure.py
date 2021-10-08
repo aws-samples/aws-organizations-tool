@@ -90,6 +90,8 @@ import orgtool.utils
 from orgtool.orgs import *
 from orgtool.utils import *
 from orgtool.spec import *
+from orgtool.validator import file_validator, spec_validator
+
 
 
 import sys
@@ -149,6 +151,22 @@ def reverse_setup(args, log):
         sc_policies = reverse_policies(org_client, log, deployed),
         accounts = reverse_accounts(org_client, log, deployed, args['--org-access-role'])
     )
+    
+    validator = file_validator(log)
+    config_keys = ['organizational_units','sc_policies','accounts']
+    for key in config_keys:
+        spec={}
+        spec[key] = reverse_config[key]
+
+        errors = 0
+        spec, errors = validate_spec_dict(log, spec, validator, errors)
+        if errors:
+            log.critical("The organization configuration is not compliant with orgtool limitation for {}. Run in debug mode for details".format(key))
+            sys.exit(1)
+
+
+
+
 
     if args['--exec']:
         shutil.copytree(template_dir, output_dir)

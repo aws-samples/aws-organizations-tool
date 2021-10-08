@@ -841,6 +841,7 @@ def core(args):
                                         break
                                 break
 
+        log.info("orgtool organization done!")
 if __name__ == "__main__":
     main()
 
