@@ -10,7 +10,7 @@ from pkg_resources import parse_version
 
 import orgtool
 from orgtool.utils import *
-from orgtool.validator import file_validator, spec_validator
+from orgtool.validator import file_validator
 
 # Spec parser defaults
 DEFAULT_CONFIG_FILE = '~/.orgtool/config.yaml'
@@ -191,12 +191,14 @@ def validate_spec(log, args, recusive=True):
         sys.exit(1)
     log.debug("spec_object:\n{}".format(yamlfmt(spec_object)))
 
-    # validate aggregated spec_object
-    validator = spec_validator(log)
-    if not validator.validate(spec_object):
-        log.critical("spec_object validation failed:\n{}".format(yamlfmt(validator.errors)))
-        sys.exit(1)
-    log.debug("spec_object validation succeeded")
+    # # # # validate aggregated spec_object
+    # # # # validator = spec_validator(log)
+    # # # validator = file_validator(log)    
+
+    # # # if not validator.validate(spec_object):
+    # # #     log.critical("spec_object validation failed:\n{}".format(yamlfmt(validator.errors)))
+    # # #     sys.exit(1)
+    # # # log.debug("spec_object validation succeeded")
     
     # scan_manage_ou_path(spec_object['organizational_units'], '/')
 

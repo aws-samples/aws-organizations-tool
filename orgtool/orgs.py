@@ -48,31 +48,31 @@ from orgtool.utils import *
 from orgtool.spec import *
 
 
-def validate_accounts_unique_in_org_spec(log, root_spec):
-    """
-    Make sure accounts are unique across org
-    """
-    # recursively build mapping of accounts to ou_names
-    def map_accounts(spec, account_map={}):
-        if 'Accounts' in spec and spec['Accounts']:
-            for account in spec['Accounts']:
-                if account in account_map:
-                    account_map[account].append(spec['Name'])
-                else:
-                    account_map[account] = [(spec['Name'])]
-        if 'Child_OU' in spec and spec['Child_OU']:
-            for child_spec in spec['Child_OU']:
-                map_accounts(child_spec, account_map)
-        return account_map
-    # find accounts set to more than one OU
-    unique = True
-    for account, ou in list(map_accounts(root_spec).items()):
-        if len(ou) > 1:
-            log.error("Account '%s' set multiple time: %s" % (account, ou))
-            unique = False
-    if not unique:
-        log.critical("Invalid org_spec: Account name should be unique in the org definition.")
-        sys.exit(1)
+# def validate_accounts_unique_in_org_spec(log, root_spec):
+#     """
+#     Make sure accounts are unique across org
+#     """
+#     # recursively build mapping of accounts to ou_names
+#     def map_accounts(spec, account_map={}):
+#         if 'Accounts' in spec and spec['Accounts']:
+#             for account in spec['Accounts']:
+#                 if account in account_map:
+#                     account_map[account].append(spec['Name'])
+#                 else:
+#                     account_map[account] = [(spec['Name'])]
+#         if 'Child_OU' in spec and spec['Child_OU']:
+#             for child_spec in spec['Child_OU']:
+#                 map_accounts(child_spec, account_map)
+#         return account_map
+#     # find accounts set to more than one OU
+#     unique = True
+#     for account, ou in list(map_accounts(root_spec).items()):
+#         if len(ou) > 1:
+#             log.error("Account '%s' set multiple time: %s" % (account, ou))
+#             unique = False
+#     if not unique:
+#         log.critical("Invalid org_spec: Account name should be unique in the org definition.")
+#         sys.exit(1)
 
 def validate_accounts_unique_in_org_deployed(log, deployed_accounts):
     """
@@ -721,7 +721,7 @@ def core(args):
         accounts = scan_deployed_accounts(log, org_client),
         ou = scan_deployed_ou(log, org_client, root_id))
 
-    validate_accounts_unique_in_org_deployed(log, deployed['accounts'])        
+    validate_accounts_unique_in_org_deployed(log, deployed['accounts'])     
 
     if args['report']:
         log.info("To get files, use the command orgtoolconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]")
@@ -743,7 +743,7 @@ def core(args):
         root_spec['Path'] = '/root'
         validate_master_id(org_client, org_spec)
         
-        validate_accounts_unique_in_org_spec(log, root_spec)
+        # validate_accounts_unique_in_org_spec(log, root_spec)
 
         managed = dict(
                 accounts = search_spec(root_spec, 'Accounts', 'Child_OU'),
