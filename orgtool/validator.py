@@ -61,6 +61,7 @@ accounts:
   required: False
   nullable: True
   type: list
+  unique_in_list: Name  
   schema:
     type: dict
     schema: account
@@ -169,6 +170,7 @@ accounts:
   required: True
   nullable: True
   type: list
+  unique_in_list: Name
 users:
   required: False
   nullable: True
@@ -255,6 +257,7 @@ POLICY_SCHEMA = """
 PolicyName:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,128}$
 Description:
   required: False
   type: string
@@ -277,6 +280,7 @@ ACCOUNT_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,50}$
 Email:
   required: False
   type: string
@@ -295,6 +299,7 @@ USER_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,64}$
 Email:
   required: True
   type: string
@@ -316,6 +321,7 @@ GROUP_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,128}$
 Path:
   required: False
   type: string
@@ -354,6 +360,7 @@ LOCAL_USER_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,64}$
 ContactEmail:
   required: True
   type: string
@@ -397,6 +404,7 @@ DELEGATION_SCHEMA = """
 RoleName:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,64}$
 Description:
   required: False
   type: string
@@ -454,6 +462,7 @@ POLICY_SET_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,128}$
 Description:
   required: False
   nullable: True
@@ -534,10 +543,10 @@ def file_validator(log):
   return vfile
 
 
-def spec_validator(log):
-  vspec = OrgToolValidator(yaml.safe_load(SPEC_SCHEMA))
-  log.debug("spec_validator_schema: {}".format(vspec.schema))
-  return vspec
+# def spec_validator(log):
+#   vspec = OrgToolValidator(yaml.safe_load(SPEC_SCHEMA))
+#   log.debug("spec_validator_schema: {}".format(vspec.schema))
+#   return vspec
 
 
 class OrgToolValidator(Validator):
