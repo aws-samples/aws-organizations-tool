@@ -363,7 +363,7 @@ def core(args):
         return
 
     account_spec = validate_spec(log, args)
-    orgtool.orgs.validate_accounts_unique_in_org_spec(log, account_spec)
+    # orgtool.orgs.validate_accounts_unique_in_org_spec(log, account_spec)
     validate_master_id(org_client, account_spec)
 
     if args['create']:
