@@ -4,6 +4,7 @@ Spec validator schema data
 ISSUES:
     place regex rule on email addresses, domain name
 """
+from logging import error
 import yaml
 
 from cerberus import Validator, schema_registry
@@ -60,6 +61,7 @@ accounts:
   required: False
   nullable: True
   type: list
+  unique_in_list: Name  
   schema:
     type: dict
     schema: account
@@ -168,6 +170,7 @@ accounts:
   required: True
   nullable: True
   type: list
+  unique_in_list: Name
 users:
   required: False
   nullable: True
@@ -204,6 +207,7 @@ Name:
   required: False
   nullable: True
   type: string
+  regex: ^[a-zA-Z0-9_.+-]{1,128}$
 IncludeConfigPath:
   required: False
   nullable: True
@@ -253,6 +257,7 @@ POLICY_SCHEMA = """
 PolicyName:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,128}$
 Description:
   required: False
   type: string
@@ -275,6 +280,7 @@ ACCOUNT_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,50}$
 Email:
   required: False
   type: string
@@ -293,6 +299,7 @@ USER_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,64}$
 Email:
   required: True
   type: string
@@ -314,6 +321,7 @@ GROUP_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,128}$
 Path:
   required: False
   type: string
@@ -352,6 +360,7 @@ LOCAL_USER_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,64}$
 ContactEmail:
   required: True
   type: string
@@ -395,6 +404,7 @@ DELEGATION_SCHEMA = """
 RoleName:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,64}$
 Description:
   required: False
   type: string
@@ -452,6 +462,7 @@ POLICY_SET_SCHEMA = """
 Name:
   required: True
   type: string
+  regex: ^[\w+=,.@-]{1,128}$
 Description:
   required: False
   nullable: True
@@ -510,29 +521,70 @@ Value:
 
 
 def file_validator(log):
-    schema_registry.add('organizational_unit', yaml.safe_load(ORGANIZATIONAL_UNIT_SCHEMA))
-    schema_registry.add('sc_policy', yaml.safe_load(POLICY_SCHEMA))
-    schema_registry.add('account', yaml.safe_load(ACCOUNT_SCHEMA))
-    schema_registry.add('user', yaml.safe_load(USER_SCHEMA))
-    schema_registry.add('group', yaml.safe_load(GROUP_SCHEMA))
-    schema_registry.add('local_user', yaml.safe_load(LOCAL_USER_SCHEMA))
-    schema_registry.add('delegation', yaml.safe_load(DELEGATION_SCHEMA))
-    schema_registry.add('custom_policy', yaml.safe_load(POLICY_SCHEMA))
-    schema_registry.add('policy_set', yaml.safe_load(POLICY_SET_SCHEMA))
-    schema_registry.add('tag', yaml.safe_load(TAG_SCHEMA))
+  schema_registry.add('organizational_unit', yaml.safe_load(ORGANIZATIONAL_UNIT_SCHEMA))
+  schema_registry.add('sc_policy', yaml.safe_load(POLICY_SCHEMA))
+  schema_registry.add('account', yaml.safe_load(ACCOUNT_SCHEMA))
+  schema_registry.add('user', yaml.safe_load(USER_SCHEMA))
+  schema_registry.add('group', yaml.safe_load(GROUP_SCHEMA))
+  schema_registry.add('local_user', yaml.safe_load(LOCAL_USER_SCHEMA))
+  schema_registry.add('delegation', yaml.safe_load(DELEGATION_SCHEMA))
+  schema_registry.add('custom_policy', yaml.safe_load(POLICY_SCHEMA))
+  schema_registry.add('policy_set', yaml.safe_load(POLICY_SET_SCHEMA))
+  schema_registry.add('tag', yaml.safe_load(TAG_SCHEMA))
 
-    schema_registry.add('stack', yaml.safe_load(STACK_SCHEMA))
-    schema_registry.add('parameter', yaml.safe_load(PARAMETER_SCHEMA))
-
-
-    log.debug("adding subschema to schema_registry: {}".format(
-            schema_registry.all().keys()))
-    vfile = Validator(yaml.safe_load(SPEC_FILE_SCHEMA))
-    log.debug("file_validator_schema: {}".format(vfile.schema))
-    return vfile
+  schema_registry.add('stack', yaml.safe_load(STACK_SCHEMA))
+  schema_registry.add('parameter', yaml.safe_load(PARAMETER_SCHEMA))
 
 
-def spec_validator(log):
-    vspec = Validator(yaml.safe_load(SPEC_SCHEMA))
-    log.debug("spec_validator_schema: {}".format(vspec.schema))
-    return vspec
+  log.debug("adding subschema to schema_registry: {}".format(
+    schema_registry.all().keys()))
+  vfile = OrgToolValidator(yaml.safe_load(SPEC_FILE_SCHEMA))
+  log.debug("file_validator_schema: {}".format(vfile.schema))
+  return vfile
+
+
+# def spec_validator(log):
+#   vspec = OrgToolValidator(yaml.safe_load(SPEC_SCHEMA))
+#   log.debug("spec_validator_schema: {}".format(vspec.schema))
+#   return vspec
+
+
+class OrgToolValidator(Validator):
+  def _validate_unique_in_list(self, unique_in_list, field, value):
+    "{'type': 'string'}"
+
+    """ Enforce uniqueness of fields listed in unique_in_list against a
+    list of objects in value.
+    """
+    # init error object
+    errors = []
+    # force input to list
+    unique_fields = unique_in_list
+    if type(unique_fields) is not list:
+      unique_fields = [unique_fields]
+
+    for unique_field in unique_fields:
+      # build hash set
+      hashes = []
+      for i, channel in enumerate(value):
+        if isinstance(channel[unique_field], dict):
+          h = hash(frozenset(channel[unique_field].items()))
+        else:
+          h = hash(channel[unique_field])
+        hashes.append(h)
+
+      # log duplicates
+      for i, h in enumerate(hashes):
+        if hashes.count(h) > 1:
+          if channel[unique_field] not in errors:
+            errors += [channel[unique_field]]
+          # if str(i) not in errors:
+          #   errors[str(i)] = {}
+          # errors[str(i)][unique_field] = \
+          #   "value '%s' must be unique in list" % \
+          #   channel[unique_field]
+
+    # report errors
+    if len(errors) > 0:
+      # self._error(field, errors)
+      self._error(field, "Values for fields {} are not unique. Duplicates found: {}".format(str(unique_fields).strip('[]'), str(errors).strip('[]') ) )

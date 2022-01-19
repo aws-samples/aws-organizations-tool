@@ -90,6 +90,8 @@ import orgtool.utils
 from orgtool.orgs import *
 from orgtool.utils import *
 from orgtool.spec import *
+from orgtool.validator import file_validator
+
 
 
 import sys
@@ -121,7 +123,7 @@ def reverse_setup(args, log):
         output_dir = os.path.expanduser(output_dir)
         if os.path.isdir(output_dir):
             if '--force' in args and args['--force']:
-                log.info("With '--force', then delete existing output directory '{}".format(output_dir))
+                log.info("With '--force', then delete existing output directory '{}'".format(output_dir))
                 if args['--exec']:
                     shutil.rmtree(output_dir)
             else:
@@ -142,13 +144,29 @@ def reverse_setup(args, log):
         accounts = scan_deployed_accounts(log, org_client),
         ou = scan_deployed_ou(log, org_client, root_id))
 
-    orgtool.orgs.validate_accounts_unique_in_org_deployed(log, deployed['accounts'])
+    # orgtool.orgs.validate_accounts_unique_in_org_deployed(log, deployed['accounts'])
     
     reverse_config = dict(
         organizational_units = reverse_ou(org_client, log, deployed, "/root", "FullAWSAccess"),
         sc_policies = reverse_policies(org_client, log, deployed),
         accounts = reverse_accounts(org_client, log, deployed, args['--org-access-role'])
     )
+    
+    validator = file_validator(log)
+    config_keys = ['organizational_units','sc_policies','accounts']
+    for key in config_keys:
+        spec={}
+        spec[key] = reverse_config[key]
+
+        errors = 0
+        spec, errors = validate_spec_dict(log, spec, validator, errors)
+        if errors:
+            log.critical("The organization configuration is not compliant with orgtool limitation for {}. Run in debug mode for details".format(key))
+            sys.exit(1)
+
+
+
+
 
     if args['--exec']:
         shutil.copytree(template_dir, output_dir)
