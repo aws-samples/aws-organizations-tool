@@ -31,7 +31,6 @@ def main():
     log_format = "%(name)s: %(levelname)-9s%(message)s"
     logging.basicConfig(stream=sys.stdout, format=log_format, level=log_level)
     log = logging.getLogger(__name__)
-    
     log.info("Laurent Delhomme <delhom@amazon.com> AWS June 2020")
 
     errors = []

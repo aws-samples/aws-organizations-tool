@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 import os
-import botocore
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
+
 class MergeConflict(Exception):
     pass
+
 
 def commit(client, repositoryName, input_folder, authorName, email, commitMessage, subdirectories=[""], branchName="master", expectedHead=""):
     '''
@@ -19,7 +20,10 @@ def commit(client, repositoryName, input_folder, authorName, email, commitMessag
     commitMessage: Commit message
     subdirectories: subdirectories which should be considered for this commit. This must be a list of substrings of the relative path with the input_folder as root. See README.md for example.
     branchName: Name of the branch to which it should be commited
-    expectedHead: expected commitId of the HEAD of the repository. If the expectedHead does not match the actual HEAD of the repository, then another commit was performed in the meantime. This means there is a risk of a potential merge conflict => cancelt the commit
+    expectedHead:
+        expected commitId of the HEAD of the repository.
+        If the expectedHead does not match the actual HEAD of the repository, then another commit was performed in the meantime.
+        This means there is a risk of a potential merge conflict => cancelt the commit
     '''
     print("Commit", input_folder, "to repository", repositoryName)
     try:
@@ -46,13 +50,16 @@ def commit(client, repositoryName, input_folder, authorName, email, commitMessag
                     putFiles=put_files,
                     deleteFiles=delete_files
                 )
+            logger.info("create_commit response is %s" % response)
         except client.exceptions.NoChangeException as e:
             print("No changes discovered. No commit performed.")
             raise(e)
     except client.exceptions.BranchDoesNotExistException as e:
         # Create initial commit
+        logger.info("BranchDoesNotExistException is %s" % e)
         client.put_file(repositoryName=repositoryName, branchName=branchName, fileContent="", filePath="README.md", commitMessage="init", name=authorName, email=email)
         commit(client, repositoryName, input_folder, authorName, email, commitMessage, branchName=branchName)
+
 
 def clone(client, repositoryName, output_folder, branchName="master"):
     '''
@@ -66,6 +73,7 @@ def clone(client, repositoryName, output_folder, branchName="master"):
     commitId = response["branch"]["commitId"]
     checkout(client, repositoryName, commitId, output_folder)
     return response
+
 
 def checkout(client, repositoryName, commitId, output_folder):
     '''
@@ -88,26 +96,28 @@ def checkout(client, repositoryName, commitId, output_folder):
             os.makedirs(os.path.join(output_folder, os.path.split(f)[0]))
         except FileExistsError:
             pass
-        output_path = os.path.join(output_folder,f)
+        output_path = os.path.join(output_folder, f)
         logger.debug(output_path)
         response = client.get_file(repositoryName=repositoryName, commitSpecifier=commitId, filePath=f)
         with open(output_path, "wb") as out_file:
             out_file.write(response["fileContent"])
 
+
 def _create_commit(client, input_folder, repositoryName, subdirectories, branchName="master"):
-        put_files = _list_local_files(input_folder, subdirectories)
-        response = client.get_branch(repositoryName=repositoryName, branchName=branchName)
-        commitId = response["branch"]["commitId"]
-        files_in_repo = _traverse_tree_list_files_in_repo([], client, repositoryName, commitId)
-        delete_files = []
-        for r in files_in_repo:
-            R_IN_LOCAL_FILES = False
-            for l in put_files:
-                if l["filePath"] == r:
-                    R_IN_LOCAL_FILES = True
-            if not R_IN_LOCAL_FILES and any([s in r for s in subdirectories]):
-                delete_files.append({"filePath": r})
-        return put_files, delete_files
+    put_files = _list_local_files(input_folder, subdirectories)
+    response = client.get_branch(repositoryName=repositoryName, branchName=branchName)
+    commitId = response["branch"]["commitId"]
+    files_in_repo = _traverse_tree_list_files_in_repo([], client, repositoryName, commitId)
+    delete_files = []
+    for r in files_in_repo:
+        R_IN_LOCAL_FILES = False
+        for put_file in put_files:
+            if put_file["filePath"] == r:
+                R_IN_LOCAL_FILES = True
+        if not R_IN_LOCAL_FILES and any([s in r for s in subdirectories]):
+            delete_files.append({"filePath": r})
+    return put_files, delete_files
+
 
 def _traverse_tree_list_files_in_repo(files_in_repo, client, repositoryName, commitId, folderPath="/"):
     response = client.get_folder(repositoryName=repositoryName, commitSpecifier=commitId, folderPath=folderPath)
@@ -119,6 +129,7 @@ def _traverse_tree_list_files_in_repo(files_in_repo, client, repositoryName, com
     for file in response["files"]:
         files_in_repo.append(file["absolutePath"])
     return files_in_repo
+
 
 def _list_local_files(folder, subdirectories):
     # List local files

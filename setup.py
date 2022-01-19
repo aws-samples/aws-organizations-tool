@@ -29,9 +29,9 @@ setup(
     keywords='aws organizations',
     packages=find_packages(exclude=['scratch', 'notes']),
     install_requires=[
-        'boto3', 
-        'docopt', 
-        'PyYAML', 
+        'boto3',
+        'docopt',
+        'PyYAML',
         'passwordgenerator',
         'cerberus',
         'email_validator',
