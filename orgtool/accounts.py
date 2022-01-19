@@ -5,7 +5,7 @@
 
 Usage:
   orgtoolaccounts (report|create|update|invite) [--config FILE]
-                                                [--spec-dir PATH] 
+                                                [--spec-dir PATH]
                                                 [--master-account-id ID]
                                                 [--auth-account-id ID]
                                                 [--org-access-role ROLE]
@@ -17,14 +17,14 @@ Modes of operation:
   report         Display organization status report.
   create         Create new accounts in AWS Org per specifation.
   update         Set account alias and tags for each account per specifation.
-  invite         Invite another account to join Org as a member account. 
+  invite         Invite another account to join Org as a member account.
 
 Options:
   -h, --help                Show this help message and exit.
   -V, --version             Display version info and exit.
   -f, --config FILE         AWS Org config file in yaml format.
   --spec-dir PATH           Location of AWS Org specification file directory.
-  --master-account-id ID    AWS account Id of the Org master account.    
+  --master-account-id ID    AWS account Id of the Org master account.
   --auth-account-id ID      AWS account Id of the authentication account.
   --org-access-role ROLE    IAM role for traversing accounts in the Org.
   --invited-account-id ID   Id of account being invited to join Org.
@@ -38,18 +38,20 @@ Options:
 """
 
 
-import yaml
 import time
+import sys
 
 import boto3
-import botocore
-from botocore.exceptions import ClientError
 from docopt import docopt
 
 import orgtool
 import orgtool.orgs
-from orgtool.utils import *
-from orgtool.spec import *
+from orgtool.utils import lookup, scan_created_accounts, get_assume_role_credentials, valid_account_id, get_logger
+from orgtool.utils import get_root_id, scan_deployed_accounts, get_account_aliases, merge_aliases, queue_threads
+from orgtool.spec import yamlfmt, string_differ, load_config, get_s3_bucket_name, validate_spec, validate_master_id
+# from orgtool.spec import *
+
+S3_OBJECT_KEY = None
 
 
 def create_accounts(org_client, args, log, deployed_accounts, account_spec):
@@ -87,18 +89,16 @@ def create_accounts(org_client, args, log, deployed_accounts, account_spec):
                             )['CreateAccountStatus']
                     if creation['State'] == 'IN_PROGRESS':
                         time.sleep(5)
-                        log.info("Account creation in progress for '%s'" %
-                                a_spec['Name'])
+                        log.info("Account creation in progress for '%s'" % a_spec['Name'])
                     elif creation['State'] == 'SUCCEEDED':
                         log.info("Account creation succeeded")
                         break
                     elif creation['State'] == 'FAILED':
-                        log.error("Account creation failed: %s" %
-                                creation['FailureReason'])
+                        log.error("Account creation failed: %s" % creation['FailureReason'])
                         break
                     counter += 1
                 if counter == maxtries and creation['State'] == 'IN_PROGRESS':
-                     log.warn("Account creation still pending. Moving on!")
+                    log.warn("Account creation still pending. Moving on!")
 
 
 def is_valid_account(account, account_spec):
@@ -122,6 +122,7 @@ def transform_tag_spec_into_list_of_dict(tag_spec):
     if tag_spec is not None:
         return [{'Key': k, 'Value': v} for k, v in tag_spec.items()]
     return []
+
 
 def sorted_tags(tag_list):
     sorted_tag_key_names = sorted([tag['Key'] for tag in tag_list])
@@ -173,7 +174,7 @@ def set_account_alias(account, log, args, account_spec, role):
     if provided.  Otherwise set the alias to the account name.
     """
     if not is_valid_account(account, account_spec):
-        return  
+        return
     proposed_alias = lookup(account_spec['accounts'], 'Name', account['Name'], 'Alias')
     # keep no aliases
     # if proposed_alias is None:
@@ -194,7 +195,7 @@ def set_account_alias(account, log, args, account_spec, role):
                 iam_client.create_account_alias(AccountAlias=proposed_alias)
             except Exception as e:
                 log.error(e)
-        
+
     elif aliases and len(aliases) > 0 and aliases[0] != proposed_alias:
         log.info("remove account alias for account '%s'" % (account['Name']))
         if args['--exec']:
@@ -238,8 +239,7 @@ def invite_account(log, args, org_client, deployed_accounts):
         log.error("account %s already in organization" % account_id)
         return
     invited_accounts = scan_invited_accounts(log, org_client)
-    account_invite = [invite for invite in invited_accounts 
-            if lookup(invite['Parties'], 'Type', 'ACCOUNT', 'Id') == account_id]
+    account_invite = [invite for invite in invited_accounts if lookup(invite['Parties'], 'Type', 'ACCOUNT', 'Id') == account_id]
     if account_invite:
         log.debug('account_invite: %s' % account_invite)
         invite_state = account_invite[0]['State']
@@ -253,7 +253,7 @@ def invite_account(log, args, org_client, deployed_accounts):
             return
     log.info("inviting account %s to join Org" % account_id)
     if args['--exec']:
-        target = dict(Id=account_id , Type='ACCOUNT')
+        target = dict(Id=account_id, Type='ACCOUNT')
         handshake = org_client.invite_account_to_organization(Target=target)['Handshake']
         log.info('account invite handshake Id: %s' % handshake['Id'])
         return handshake
@@ -282,8 +282,7 @@ def display_provisioned_accounts(log, deployed_accounts, status):
     """
     if status not in ('ACTIVE', 'SUSPENDED'):
         raise RuntimeError("'status' must be one of ('ACTIVE', 'SUSPENDED')")
-    sorted_account_names = sorted([a['Name'] for a in deployed_accounts
-            if a['Status'] == status])
+    sorted_account_names = sorted([a['Name'] for a in deployed_accounts if a['Status'] == status])
     if sorted_account_names:
         header = '%s Accounts in Org:' % status.capitalize()
         overbar = '_' * len(header)
@@ -300,7 +299,7 @@ def display_provisioned_accounts(log, deployed_accounts, status):
 
 
 def unmanaged_accounts(log, deployed_accounts, account_spec):
-    deployed_account_names = [a['Name'] for a in deployed_accounts] 
+    deployed_account_names = [a['Name'] for a in deployed_accounts]
     spec_account_names = [a['Name'] for a in account_spec['accounts']]
     log.debug('deployed_account_names: %s' % deployed_account_names)
     log.debug('spec_account_names: %s' % spec_account_names)
@@ -318,14 +317,15 @@ def s3_object_for_accounts(s3_account_bucket, object_key, deployed_accounts):
     if s3_account_bucket not in bucket_list:
         # s3_client.create_bucket(Bucket = s3_account_bucket, CreateBucketConfiguration = {'LocationConstraint':'us-west-1'})
         s3_client.create_bucket(
-            ACL = 'private',
-            Bucket = s3_account_bucket,
-            CreateBucketConfiguration = {'LocationConstraint':'us-west-1'}
+            ACL='private',
+            Bucket=s3_account_bucket,
+            CreateBucketConfiguration={'LocationConstraint': 'us-west-1'}
         )
     s3_client.put_object(
-	Bucket = s3_account_bucket,
-	Key = object_key,
-	Body = yamlfmt(deployed_accounts))
+        Bucket=s3_account_bucket,
+        Key=object_key,
+        Body=yamlfmt(deployed_accounts)
+    )
     return
 
 
@@ -347,10 +347,10 @@ def core(args):
         sys.exit(1)
     org_client = boto3.client('organizations', **credentials)
     root_id = get_root_id(org_client)
+    log.info("root_id is %s" % root_id)
     deployed_accounts = scan_deployed_accounts(log, org_client)
 
-    orgtool.orgs.validate_accounts_unique_in_org_deployed(log, deployed_accounts)        
-
+    orgtool.orgs.validate_accounts_unique_in_org_deployed(log, deployed_accounts)
 
     if args['report']:
         aliases = get_account_aliases(log, deployed_accounts, args['--org-access-role'])
@@ -373,16 +373,26 @@ def core(args):
             log.warn("Unmanaged accounts in Org: %s" % (', '.join(unmanaged)))
 
     if args['update']:
-        queue_threads(log, deployed_accounts, set_account_alias,
-                f_args=(log, args, account_spec, args['--org-access-role']),
-                thread_count=4) #10
-        queue_threads(log, deployed_accounts, set_account_tags,
-                f_args=(log, args, account_spec, org_client),
-                thread_count=4) #6
+        queue_threads(
+            log,
+            deployed_accounts,
+            set_account_alias,
+            f_args=(log, args, account_spec, args['--org-access-role']),
+            thread_count=4
+        )
+        # 10
+        queue_threads(
+            log,
+            deployed_accounts,
+            set_account_tags,
+            f_args=(log, args, account_spec, org_client),
+            thread_count=4
+        )
+        # 6
 
     if args['invite']:
         invite_account(log, args, org_client, deployed_accounts)
-        
+
 
 if __name__ == "__main__":
     main()
