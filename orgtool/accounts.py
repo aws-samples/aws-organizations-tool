@@ -51,7 +51,7 @@ from orgtool.utils import get_root_id, scan_deployed_accounts, get_account_alias
 from orgtool.spec import yamlfmt, string_differ, load_config, get_s3_bucket_name, validate_spec, validate_master_id
 # from orgtool.spec import *
 
-S3_OBJECT_KEY = None
+S3_OBJECT_KEY = 'orgtool'
 
 
 def create_accounts(org_client, args, log, deployed_accounts, account_spec):
