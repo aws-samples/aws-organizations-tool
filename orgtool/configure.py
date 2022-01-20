@@ -21,14 +21,14 @@ Usage:
 
 Modes of operation:
   reverse-setup                      Generate configuration files from the current AWS Organization deployed
-                                     - config.yaml, 
-                                     - spec.d/account.yaml, 
-                                     - spec.d/common.yaml, 
-                                     - spec.d/organizational_units.yaml, 
+                                     - config.yaml,
+                                     - spec.d/account.yaml,
+                                     - spec.d/common.yaml,
+                                     - spec.d/organizational_units.yaml,
                                      - spec.d/custom_policies
-                                     - spec.d/sc_policies.yaml 
- 
-  distributed-config create          create a distributed config inclued in the parent config            
+                                     - spec.d/sc_policies.yaml
+
+  distributed-config create          create a distributed config inclued in the parent config
   distributed-config delete          delete a distributed config and client the parent config
   account create                     create account
   account update                     update account alias
@@ -56,45 +56,47 @@ Options:
   --ou-path <path>
   --prefix <value>
   --config-from <path>
-  --trusted-account <name> 
-  --description <decription> 
-  --require-mfa 
+  --trusted-account <name>
+  --description <decription>
+  --require-mfa
   --policies <policy-name>
   --role-name <name>
   --scp-name <name>
   --ou-name <name>
-  --template-dir <path> 
+  --template-dir <path>
   --output-dir <path>
   --output-file <path>
-  --master-account-id <id> 
+  --master-account-id <id>
   --org-access-role <role>
   --force
   --exec                      Execute proposed changes to AWS Org.
   -q, --quiet                 Repress log output.
   -d, --debug                 Increase log level to 'DEBUG'.
   -dd                         Include botocore and boto3 logs in log stream.
-  
+
 
 """
 
-from botocore import args
 import os
 import shutil
 import boto3
+import sys
+
 from email_validator import validate_email, EmailNotValidError
 from docopt import docopt
 
 import orgtool
-import orgtool.orgs
-import orgtool.utils
-from orgtool.orgs import *
-from orgtool.utils import *
-from orgtool.spec import *
+# import orgtool.orgs
+# import orgtool.utils
+# from orgtool.orgs import *
+# from orgtool.utils import *
+# from orgtool.spec import *
+
+from orgtool.orgs import scan_deployed_policies, scan_deployed_accounts, scan_deployed_ou, reverse_ou, reverse_policies, reverse_accounts
+from orgtool.utils import get_assume_role_credentials, get_root_id, yamlfmt, flatten_OUs, dump_to_spec_config, get_logger
+from orgtool.spec import validate_spec_dict, load_config, validate_spec
 from orgtool.validator import file_validator
 
-
-
-import sys
 
 def reverse_setup(args, log):
     # awsconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]
@@ -130,7 +132,7 @@ def reverse_setup(args, log):
                 log.error("Output directory '{}' exists and could be not empty. Refusing to overwrite. Use '--force' to force overwrite".format(output_dir))
                 raise Exception("Output directory '{}' exists and could be not empty. Refusing to overwrite. Use '--force' to force overwrite".format(output_dir))
                 # sys.exit(1)
-        
+
     else:
         log.error("--output-dir required!")
         raise Exception("--output-dir required!")
@@ -140,22 +142,22 @@ def reverse_setup(args, log):
     root_id = get_root_id(org_client)
 
     deployed = dict(
-        policies = scan_deployed_policies(org_client),
-        accounts = scan_deployed_accounts(log, org_client),
-        ou = scan_deployed_ou(log, org_client, root_id))
+        policies=scan_deployed_policies(org_client),
+        accounts=scan_deployed_accounts(log, org_client),
+        ou=scan_deployed_ou(log, org_client, root_id))
 
     # orgtool.orgs.validate_accounts_unique_in_org_deployed(log, deployed['accounts'])
-    
+
     reverse_config = dict(
-        organizational_units = reverse_ou(org_client, log, deployed, "/root", "FullAWSAccess"),
-        sc_policies = reverse_policies(org_client, log, deployed),
-        accounts = reverse_accounts(org_client, log, deployed, args['--org-access-role'])
+        organizational_units=reverse_ou(org_client, log, deployed, "/root", "FullAWSAccess"),
+        sc_policies=reverse_policies(org_client, log, deployed),
+        accounts=reverse_accounts(org_client, log, deployed, args['--org-access-role'])
     )
-    
+
     validator = file_validator(log)
-    config_keys = ['organizational_units','sc_policies','accounts']
+    config_keys = ['organizational_units', 'sc_policies', 'accounts']
     for key in config_keys:
-        spec={}
+        spec = {}
         spec[key] = reverse_config[key]
 
         errors = 0
@@ -164,10 +166,6 @@ def reverse_setup(args, log):
             log.critical("The organization configuration is not compliant with orgtool limitation for {}. Run in debug mode for details".format(key))
             sys.exit(1)
 
-
-
-
-
     if args['--exec']:
         shutil.copytree(template_dir, output_dir)
 
@@ -175,29 +173,29 @@ def reverse_setup(args, log):
         config_file = os.path.join(output_dir, "config.yaml")
         config_file_common = os.path.join(spec_dir, "common.yaml")
 
-        f = open(config_file,"rt")
+        f = open(config_file, "rt")
         fc = f.read()
         fc = fc.replace('--spec_dir--', "--/spec.d")
         fc = fc.replace('--org_access_role--', args['--org-access-role'])
         fc = fc.replace('000000000000', args['--master-account-id'])
         f.close()
-        f = open(config_file,"wt")
+        f = open(config_file, "wt")
         f.write(fc)
         f.close()
 
-        f = open(config_file_common,"rt")
+        f = open(config_file_common, "rt")
         fc = f.read()
         fc = fc.replace('000000000000', args['--master-account-id'])
         f.close()
-        f = open(config_file_common,"wt")
+        f = open(config_file_common, "wt")
         f.write(fc)
         f.close()
 
         for key in reverse_config:
             file_name = key + ".yaml"
             file_path = os.path.join(spec_dir, file_name)
-            f=open(file_path, "a+")
-            f.write ("\r\n")
+            f = open(file_path, "a+")
+            f.write("\r\n")
             f.write(yamlfmt(reverse_config[key]))
             f.close()
 
@@ -207,6 +205,7 @@ def reverse_setup(args, log):
         log.info("orgtool reverse-setup executed with success. Files delivered in {}".format(output_dir))
 
     return
+
 
 def distributed_config_create(args, log, org_spec):
     # awsconfigure distributed-config create --template-config <path> --child-config <path> [--prefix <value>] --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
@@ -225,7 +224,7 @@ def distributed_config_create(args, log, org_spec):
     child_org_spec = validate_spec(log, child_args, False)
     child_org_spec['master_account_id'] = org_spec['master_account_id']
     child_org_spec['auth_account_id'] = org_spec['master_account_id']
-    
+
     if 'organizational_units' in child_org_spec and child_org_spec['organizational_units']:
         child_org_spec['organizational_units'][0]['Name'] = args['--ou-name']
         child_org_spec['organizational_units'][0]['MountingOUPath'] = args['--ou-path']
@@ -236,7 +235,6 @@ def distributed_config_create(args, log, org_spec):
         child_org_spec['organizational_units'] = []
         child_org_spec['organizational_units'] += [child_root_ou]
     # --------------- ADD TO CHILD CONFIG
-    
 
     # --------------- ADD TO PARENT CONFIG
     OUs = flatten_OUs(org_spec, log)
@@ -259,7 +257,6 @@ def distributed_config_create(args, log, org_spec):
         parent_ou['Child_OU'] = [ou]
     # --------------- ADD TO PARENT CONFIG
 
-
     # --------------- DUMP CONFIGs
     if args['--exec']:
         template_dir = os.path.split(args['--template-config'])[0]
@@ -278,12 +275,13 @@ def distributed_config_create(args, log, org_spec):
         source_common_file = os.path.join(args['--spec-dir'], 'common.yaml')
         dest_common_file = os.path.join(child_args['--spec-dir'], 'common.yaml')
         shutil.copyfile(source_common_file, dest_common_file)
-    
+
     # Dump into the child organizational units file
-    dump_to_spec_config(child_args,log,child_org_spec,'organizational_units')
+    dump_to_spec_config(child_args, log, child_org_spec, 'organizational_units')
     # Dump into the parent organizational units file
-    dump_to_spec_config(args,log,org_spec,'organizational_units')
+    dump_to_spec_config(args, log, org_spec, 'organizational_units')
     # --------------- DUMP CONFIGs
+
 
 def distributed_config_delete(args, log, org_spec):
     # awsconfigure distributed-config delete --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
@@ -294,34 +292,36 @@ def distributed_config_delete(args, log, org_spec):
     if OUs[child_ou_path] and OUs[args['--ou-path']]:
         child_ou = OUs[child_ou_path]
         parent_ou = OUs[args['--ou-path']]
-        
+
         child_config_path = child_ou['IncludeConfigPath']
 
         for index, ou in enumerate(parent_ou['Child_OU']):
             if parent_ou['Child_OU'][index]['Name'] == args['--ou-name']:
                 parent_ou['Child_OU'].pop(index)
-                
+
                 if args['--exec']:
                     # ------- delete child config directory
                     shutil.rmtree(os.path.split(child_config_path)[0])
-                
+
                 # ------- dump update parent organizational_units config
-                dump_to_spec_config(args,log,org_spec,'organizational_units')
+                dump_to_spec_config(args, log, org_spec, 'organizational_units')
                 break
     else:
         log.error("'{}' not found in org_spec OUs".format(child_ou_path))
         raise Exception("'{}' not found in org_spec OUs".format(child_ou_path))
         # sys.exit(-1)
 
+
 def account_create(args, log, org_spec):
     # awsconfigure account create --config <path> --account-name <name> --email <email> --ou-path <path> [--alias <alias> --tag <key>=<value>...] [--exec] [-q] [-d|-dd]
-  
+
     account = {}
     account['Name'] = args['--account-name'][0]
     try:
         v = validate_email(args['--email'])  # validate and get info
         email = v["email"]  # replace with normalized form
-        account['Email'] = args['--email']
+        account['Email'] = email
+        # account['Email'] = args['--email']
     except EmailNotValidError as e:
         # email is not valid, exception message is human-readable
         log.error(str(e))
@@ -362,6 +362,7 @@ def account_create(args, log, org_spec):
     dump_to_spec_config(args, log, org_spec, 'organizational_units')
     dump_to_spec_config(args, log, org_spec, 'accounts')
 
+
 def account_update(args, log, org_spec):
     # awsconfigure account update --config <path> --account-name <name> --alias <alias> [--exec] [-q] [-d|-dd]
     if len(args['--account-name']) != 1:
@@ -377,10 +378,10 @@ def account_update(args, log, org_spec):
                 account[0].pop('Alias', None)
             else:
                 account[0]['Alias'] = args['--alias']
-            
+
             # dump the changes
-            dump_to_spec_config(args, log, org_spec, 'accounts')    
-    
+            dump_to_spec_config(args, log, org_spec, 'accounts')
+
         else:
             log.error("'{}' not found in org_spec accounts".format(args['--account-name'][0]))
             raise Exception("'{}' not found in org_spec accounts".format(args['--account-name'][0]))
@@ -389,6 +390,7 @@ def account_update(args, log, org_spec):
         log.error("org_spec has no accounts")
         raise Exception("org_spec has no accounts")
         # sys.exit(-1)
+
 
 def account_tag_add(args, log, org_spec):
     # awsconfigure account tag add --config <path> --account-name <name> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
@@ -411,9 +413,10 @@ def account_tag_add(args, log, org_spec):
                     else:
                         key = tab[0]
                         value = tab[1]
-                        if not ('Tags' in account and account['Tags']): account['Tags'] = {}
+                        if not ('Tags' in account and account['Tags']):
+                            account['Tags'] = {}
                         account['Tags'][key] = value
-                
+
                 # dump the changes
                 dump_to_spec_config(args, log, org_spec, 'accounts')
 
@@ -425,12 +428,14 @@ def account_tag_add(args, log, org_spec):
         log.error("org_spec has no accounts")
         raise Exception("org_spec has no accounts")
         # sys.exit(-1)
-    
+
     return
+
 
 def account_tag_update(args, log, org_spec):
     # with add using the same key
     return
+
 
 def account_tag_remove(args, log, org_spec):
     # awsconfigure account tag remove --config <path> --account-name <name> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
@@ -452,10 +457,11 @@ def account_tag_remove(args, log, org_spec):
                         sys.exit(1)
                     else:
                         key = tab[0]
-                        value = tab[1]
-                        if 'Tags' in account and account['Tags']: 
+                        # value = tab[1]
+                        if 'Tags' in account and account['Tags']:
                             account['Tags'].pop(key, None)
-                            if len(account['Tags']) == 0: account.pop('Tags', None)                
+                            if len(account['Tags']) == 0:
+                                account.pop('Tags', None)
                 # dump the changes
                 dump_to_spec_config(args, log, org_spec, 'accounts')
 
@@ -468,8 +474,8 @@ def account_tag_remove(args, log, org_spec):
         raise Exception("org_spec has no accounts")
         # sys.exit(-1)
 
-    
     return
+
 
 def account_move(args, log, org_spec):
     # awsconfigure account move --config <path> --account-name <name> --ou-path <path> [--config-from <path>] [--exec] [-q] [-d|-dd]
@@ -492,9 +498,9 @@ def account_move(args, log, org_spec):
 
     found = False
     if 'accounts' in from_org_spec and from_org_spec['accounts']:
-        # and len([a for a in from_org_spec['accounts'] if a['Name'] == args['--account-name'][0]]) == 1:            
+        # and len([a for a in from_org_spec['accounts'] if a['Name'] == args['--account-name'][0]]) == 1:
         for i, index in enumerate(from_org_spec['accounts']):
-            if from_org_spec['accounts'][i]['Name'] ==  args['--account-name'][0]:
+            if from_org_spec['accounts'][i]['Name'] == args['--account-name'][0]:
                 found = True
                 account = from_org_spec['accounts'][i]
                 from_OUs = flatten_OUs(from_org_spec, log)
@@ -502,7 +508,7 @@ def account_move(args, log, org_spec):
 
                 # test if dest is ok
                 if args['--ou-path'] in OUs and OUs[args['--ou-path']]:
-                    #search source
+                    # search source
                     for from_ou_path in from_OUs:
                         from_ou = from_OUs[from_ou_path]
 
@@ -510,19 +516,21 @@ def account_move(args, log, org_spec):
                             for ii, iindex in enumerate(from_ou['Accounts']):
                                 if from_ou['Accounts'][ii] == args['--account-name'][0]:
                                     # Source OU found
-                                    # add account to dest    
+                                    # add account to dest
                                     if 'Accounts' in OUs[args['--ou-path']] and OUs[args['--ou-path']]['Accounts']:
                                         OUs[args['--ou-path']]['Accounts'] += args['--account-name']
-                                    else: 
+                                    else:
                                         OUs[args['--ou-path']]['Accounts'] = args['--account-name']
 
                                     # remove account from source
                                     from_ou['Accounts'].pop(ii)
-                                    if len(from_ou['Accounts']) == 0: from_ou.pop('Accounts', None)
-                                    
+                                    if len(from_ou['Accounts']) == 0:
+                                        from_ou.pop('Accounts', None)
+
                                     # move account from/to org spec
                                     from_org_spec['accounts'].pop(i)
-                                    if len(from_org_spec['accounts']) == 0: from_org_spec['accounts'] = None
+                                    if len(from_org_spec['accounts']) == 0:
+                                        from_org_spec['accounts'] = None
                                     if 'accounts' in org_spec and org_spec['accounts']:
                                         org_spec['accounts'] += [account]
                                     else:
@@ -530,15 +538,15 @@ def account_move(args, log, org_spec):
 
                                     # dump the config
                                     dump_to_spec_config(args, log, org_spec, 'organizational_units')
-                                    dump_to_spec_config(args, log, org_spec, 'accounts')                                    
-                                    if '--config' in from_args and from_args['--config']: 
+                                    dump_to_spec_config(args, log, org_spec, 'accounts')
+                                    if '--config' in from_args and from_args['--config']:
                                         dump_to_spec_config(from_args, log, from_org_spec, 'organizational_units')
                                         dump_to_spec_config(from_args, log, from_org_spec, 'accounts')
-                                        
+
                                     # if from_args: dump_to_spec_config(from_args, log, from_org_spec, 'organizational_units')
                                     # exit from the function
                                     return
-                    
+
                     # if pass here, account not found in any OUs
                     log.error("'{}' not found in org_spec OUs".format(args['--account-name']))
                     raise Exception("'{}' not found in org_spec OUs".format(args['--account-name']))
@@ -554,6 +562,7 @@ def account_move(args, log, org_spec):
         raise Exception("Account '{}' not found in the organisation's accounts".format(args['--account-name'][0]))
         sys.exit(-1)
 
+
 def delegation_create(args, log, org_spec):
     # awsconfigure delegation create --trusted-account <name> --account-name <name>... --description <decription> [--require-mfa] [--ensure-present --ensure-absent] --policies <policy-name>... --config <path> --role-name <name> [--exec] [-q] [-d|-dd]
     # - RoleName: ORGTOOL_Provisioning
@@ -565,16 +574,16 @@ def delegation_create(args, log, org_spec):
     #   - entity2_tools
     #   TrustedAccount: test
     #   Policies:
-    #   - AdministratorAccess 
+    #   - AdministratorAccess
 
     delegations = []
     # search for a delegation with the same name
     if 'delegations' in org_spec and org_spec['delegations']:
-        delegations = [d for d in org_spec['delegations'] if d['RoleName']==args['--role-name']]    
+        delegations = [d for d in org_spec['delegations'] if d['RoleName'] == args['--role-name']]
 
     # assume by default this delegation doesn't exist yet
     delegation = {}
-    if len(delegations) ==1:
+    if len(delegations) == 1:
         # the delegation exist and will be updated with the new values
         delegation = delegations[0]
 
@@ -595,7 +604,7 @@ def delegation_create(args, log, org_spec):
         delegation['Ensure'] = 'absent'
 
     # if args['--ensure-present']: delegation['Ensure'] = 'present'
-    # if args['--ensure-absent']: delegation['Ensure'] = 'absent'        
+    # if args['--ensure-absent']: delegation['Ensure'] = 'absent'
     delegation['RequireMFA'] = args['--require-mfa']
     delegation['TrustedAccount'] = args['--trusted-account']
     delegation['TrustingAccount'] = args['--account-name']
@@ -609,6 +618,7 @@ def delegation_create(args, log, org_spec):
     dump_to_spec_config(args, log, org_spec, 'delegations')
     return
 
+
 def delegation_delete(args, log, org_spec):
     # awsconfigure delegation delete --config <path> --role-name <name> [--exec] [-q] [-d|-dd]
     found = False
@@ -618,15 +628,17 @@ def delegation_delete(args, log, org_spec):
             if org_spec['delegations'][i]['RoleName'] == args['--role-name']:
                 found = True
                 org_spec['delegations'].pop(i)
-                if len(org_spec['delegations']) == 0: org_spec['delegations'] = None
+                if len(org_spec['delegations']) == 0:
+                    org_spec['delegations'] = None
 
                 dump_to_spec_config(args, log, org_spec, 'delegations')
                 return
-    
+
     if not found:
         log.error("Delegation '{}' not found in the organisation's delegations '{}'".format(args['--role-name'], args['--config']))
         raise Exception("Delegation '{}' not found in the organisation's delegations '{}'".format(args['--role-name'], args['--config']))
         # sys.exit(-1)
+
 
 def delegation_trusting_add(args, log, org_spec):
     # awsconfigure delegation trusting add --config <path>  --role-name <name> --account-name <name>... [--exec] [-q] [-d|-dd]
@@ -634,30 +646,32 @@ def delegation_trusting_add(args, log, org_spec):
     changed = False
     # search for a delegation with the same name
     if 'delegations' in org_spec and org_spec['delegations']:
-        delegations = [d for d in org_spec['delegations'] if d['RoleName']==args['--role-name']]   
+        delegations = [d for d in org_spec['delegations'] if d['RoleName'] == args['--role-name']]
         if len(delegations) == 1:
             found = True
             delegation = delegations[0]
-    
+
             if 'TrustingAccount' in delegation and delegation['TrustingAccount']:
-                
+
                 for i, index in enumerate(args['--account-name']):
                     if len([a for a in delegation['TrustingAccount'] if a == args['--account-name'][i]]) == 0:
                         delegation['TrustingAccount'] += [args['--account-name'][i]]
                         changed = True
                     else:
                         log.debug("Account '{}' is already in the trusting account list of '{}'".format(args['--account-name'][i], args['--role-name']))
-                    
+
             else:
                 delegation['TrustingAccount'] = args['--account-name']
                 changed = True
 
-            if changed: dump_to_spec_config(args, log, org_spec, 'delegations')
-    
+            if changed:
+                dump_to_spec_config(args, log, org_spec, 'delegations')
+
     if not found:
         log.error("Delegation '{}' not found in the organisation's delegations '{}'".format(args['--role-name'], args['--config']))
         raise Exception("Delegation '{}' not found in the organisation's delegations '{}'".format(args['--role-name'], args['--config']))
         # sys.exit(-1)
+
 
 def delegation_trusting_remove(args, log, org_spec):
     # awsconfigure delegation trusting remove --config <path>  --role-name <name> --account-name <name>... [--exec] [-q] [-d|-dd]
@@ -665,18 +679,18 @@ def delegation_trusting_remove(args, log, org_spec):
     changed = False
     # search for a delegation with the same name
     if 'delegations' in org_spec and org_spec['delegations']:
-        delegations = [d for d in org_spec['delegations'] if d['RoleName']==args['--role-name']]   
+        delegations = [d for d in org_spec['delegations'] if d['RoleName'] == args['--role-name']]
         if len(delegations) == 1:
             found = True
             delegation = delegations[0]
-    
+
             if 'TrustingAccount' in delegation and delegation['TrustingAccount']:
-                
+
                 for i, index in enumerate(args['--account-name']):
                     for ii, iindex in enumerate(delegation['TrustingAccount']):
                         if args['--account-name'][i] == delegation['TrustingAccount'][ii]:
                             delegation['TrustingAccount'].pop(ii)
-                            changed = True    
+                            changed = True
                             break
 
                     if len(delegation['TrustingAccount']) == 0:
@@ -686,32 +700,31 @@ def delegation_trusting_remove(args, log, org_spec):
             else:
                 log.debug("Trusting account list of '{}' is empty".format(args['--role-name']))
 
-            if changed: 
+            if changed:
                 dump_to_spec_config(args, log, org_spec, 'delegations')
-            
-    
+
     if not found:
         log.error("Delegation '{}' not found in the organisation's delegations '{}'".format(args['--role-name'], args['--config']))
         raise Exception("Delegation '{}' not found in the organisation's delegations '{}'".format(args['--role-name'], args['--config']))
         # sys.exit(-1)
 
+
 def organization_unit_create(args, log, org_spec):
     # awsconfigure organization-unit create --config <path> --ou-path <path> [--exec] [-q] [-d|-dd]
     # awsconfigure organization-unit create --config organization/.orgtool/root/config.yaml --ou-path /root/test1/lolo [--exec] [-q] [-d|-dd]
 
-
-    OUs = flatten_OUs(org_spec,log)
+    OUs = flatten_OUs(org_spec, log)
     # check the OU doesn't exist yet
     if args['--ou-path'] in OUs and OUs[args['--ou-path']]:
         log.error("OU '{}' already found in the organisation '{}'".format(args['--ou-path'], args['--config']))
         raise Exception("OU '{}' already found in the organisation '{}'".format(args['--ou-path'], args['--config']))
         # sys.exit(-1)
     else:
-    
+
         # get parent path and OU name
         parent_path = os.path.split(args['--ou-path'])[0]
         ou_name = os.path.split(args['--ou-path'])[1]
-        
+
         if parent_path in OUs and OUs[parent_path]:
             # Parent OU found
             ou = OUs[parent_path]
@@ -725,22 +738,23 @@ def organization_unit_create(args, log, org_spec):
             dump_to_spec_config(args, log, org_spec, 'organizational_units')
 
         else:
-            # Parent path not found        
+            # Parent path not found
             log.error("OU '{}' not found in the organisation '{}'".format(parent_path, args['--config']))
             raise Exception("OU '{}' not found in the organisation '{}'".format(parent_path, args['--config']))
             # sys.exit(-1)
-    
+
+
 def organization_unit_delete(args, log, org_spec):
     # awsconfigure organization-unit delete --config <path> --ou-path <path> [--exec] [-q] [-d|-dd]
 
-    OUs = flatten_OUs(org_spec,log)
+    OUs = flatten_OUs(org_spec, log)
     # check the OU exists
     if args['--ou-path'] in OUs and OUs[args['--ou-path']]:
 
         # get parent path and OU name
         parent_path = os.path.split(args['--ou-path'])[0]
         ou_name = os.path.split(args['--ou-path'])[1]
-    
+
         # Parent OU found
         ou = OUs[parent_path]
         for i, index in enumerate(ou['Child_OU']):
@@ -748,15 +762,16 @@ def organization_unit_delete(args, log, org_spec):
                 ou['Child_OU'].pop(i)
                 if len(ou['Child_OU']) == 0:
                     ou.pop('Child_OU', None)
-                
+
                 dump_to_spec_config(args, log, org_spec, 'organizational_units')
                 break
 
     else:
-        # Parent path not found        
+        # Parent path not found
         log.error("OU '{}' not found in the organisation '{}'".format(args['--ou-path'], args['--config']))
         raise Exception("OU '{}' not found in the organisation '{}'".format(args['--ou-path'], args['--config']))
         # sys.exit(-1)
+
 
 def organization_unit_scp_add(args, log, org_spec):
     # awsconfigure organization-unit scp add --config <path> --ou-path <path> [--scp-name <name>...] [--exec] [-q] [-d|-dd]
@@ -778,13 +793,15 @@ def organization_unit_scp_add(args, log, org_spec):
         else:
             ou['SC_Policies'] = args['--scp-name']
             changed = True
-    
-        if changed: dump_to_spec_config(args, log, org_spec, 'organizational_units')
+
+        if changed:
+            dump_to_spec_config(args, log, org_spec, 'organizational_units')
 
     else:
         log.error("OU '{}' not found in the organisation '{}'".format(args['--ou-path'], args['--config']))
         raise Exception("OU '{}' not found in the organisation '{}'".format(args['--ou-path'], args['--config']))
         # sys.exit(-1)
+
 
 def organization_unit_scp_remove(args, log, org_spec):
     # awsconfigure organization-unit scp remove --config <path> --ou-path <path> [--scp-name <name>...] [--exec] [-q] [-d|-dd]
@@ -800,7 +817,7 @@ def organization_unit_scp_remove(args, log, org_spec):
                 for ii, iindex in enumerate(ou['SC_Policies']):
                     if args['--scp-name'][i] == ou['SC_Policies'][ii]:
                         ou['SC_Policies'].pop(ii)
-                        changed = True    
+                        changed = True
                         break
 
                 if len(ou['SC_Policies']) == 0:
@@ -810,12 +827,14 @@ def organization_unit_scp_remove(args, log, org_spec):
         else:
             log.debug("SC_Policies list of '{}' is empty".format(args['--ou-path']))
 
-        if changed: dump_to_spec_config(args, log, org_spec, 'organizational_units')
+        if changed:
+            dump_to_spec_config(args, log, org_spec, 'organizational_units')
 
     else:
         log.error("OU '{}' not found in the organisation '{}'".format(args['--ou-path'], args['--config']))
         raise Exception("OU '{}' not found in the organisation '{}'".format(args['--ou-path'], args['--config']))
         # sys.exit(-1)
+
 
 def validate(args, log):
     # awsconfigure validate --config <path> --recursive
@@ -825,8 +844,9 @@ def validate(args, log):
     log.debug(args)
     return
 
+
 def get_ou_list(args, log, org_spec):
-    
+
     OUs = flatten_OUs(org_spec, log)
     output = None
     for OU in OUs:
@@ -839,14 +859,13 @@ def get_ou_list(args, log, org_spec):
         f.write(output)
 
 
-
 def organization_unit_tag_add(args, log, org_spec):
     # awsconfigure organization-unit tag add --config <path> --ou-path <path> --tag <key>=<value> [--exec] [-q] [-d|-dd]
-    
+
     if len(args['--ou-path'].split()) != 1:
         log.error("Please, provide 1 single OU Path")
         raise Exception("Please, provide 1 single OU Path")
-    
+
     changed = False
 
     OUs = flatten_OUs(org_spec, log)
@@ -862,7 +881,8 @@ def organization_unit_tag_add(args, log, org_spec):
                 else:
                     key = tab[0]
                     value = tab[1]
-                    if not ('Tags' in ou and ou['Tags']): ou['Tags'] = {}
+                    if not ('Tags' in ou and ou['Tags']):
+                        ou['Tags'] = {}
                     log.debug('Setting Tag with key ' + key + ' with value ' + value + ' for OU ' + ou['Name'])
                     ou['Tags'][key] = value
                     changed = True
@@ -873,15 +893,17 @@ def organization_unit_tag_add(args, log, org_spec):
         log.error("OU '{}' not found in the organisation '{}'".format(args['--ou-path'], args['--config']))
         raise Exception("OU '{}' not found in the organisation '{}'".format(args['--ou-path'], args['--config']))
 
-    if changed: dump_to_spec_config(args, log, org_spec, 'organizational_units')
+    if changed:
+        dump_to_spec_config(args, log, org_spec, 'organizational_units')
+
 
 def organization_unit_tag_remove(args, log, org_spec):
     # awsconfigure organization-unit tag remove --config <path> --ou-path <path> --tag <key>=<value> [--exec] [-q] [-d|-dd]
-    
+
     if len(args['--ou-path'].split()) != 1:
         log.error("Please, provide 1 single OU Path")
         raise Exception("Please, provide 1 single OU Path")
-    
+
     changed = False
     # search for the OU
     OUs = flatten_OUs(org_spec, log)
@@ -895,20 +917,21 @@ def organization_unit_tag_remove(args, log, org_spec):
                     sys.exit(1)
                 else:
                     key = tab[0]
-                    value = tab[1]
+                    # value = tab[1]
                     if 'Tags' in ou and ou['Tags']:
                         if key in ou['Tags']:
                             ou['Tags'].pop(key, None)
                             log.debug('Removing tag with key ' + key)
                             changed = True
-                            if len(ou['Tags']) == 0: ou.pop('Tags', None)
-                        else: 
+                            if len(ou['Tags']) == 0:
+                                ou.pop('Tags', None)
+                        else:
                             log.debug('No tag with key ' + key + 'for OU ' + ou['Name'] + '. So doing nothing.')
                     else:
                         log.debug('Trying to remove Tag with key ' + key + ' for OU ' + ou['Name'] + ' but OU has no Tags set. So doing nothing.')
 
-
-        if changed: dump_to_spec_config(args, log, org_spec, 'organizational_units')
+        if changed:
+            dump_to_spec_config(args, log, org_spec, 'organizational_units')
 
     else:
         log.error("OU '{}' not found in the organisation '{}'".format(args['--ou-path'], args['--config']))
@@ -920,18 +943,19 @@ def main():
     args = docopt(__doc__, version=orgtool.__version__)
     core(args)
 
+
 def core(args, log=None):
     if not log:
         log = get_logger(args)
     log.debug(args)
     log.info("New feature for IaC, CLI to manipulate the configuration - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
-    if args['reverse-setup']: 
+    if args['reverse-setup']:
         reverse_setup(args, log)
         log.info("reverse-setup done!")
         return
 
     args = load_config(log, args)
-    
+
     if args['validate']:
         log.debug('validate')
         validate(args, log)
@@ -1016,7 +1040,7 @@ def core(args, log=None):
             log.debug('account create')
             account_create(args, log, org_spec)
             log.info("account create done!")
-    
+
         if args['update']:
             log.debug('account update')
             account_update(args, log, org_spec)
@@ -1041,7 +1065,7 @@ def core(args, log=None):
             log.debug('account move')
             account_move(args, log, org_spec)
             log.info("account move done!")
-    
+
     if args['get-ou-list']:
         log.debug('get-ou-list')
         get_ou_list(args, log, org_spec)
