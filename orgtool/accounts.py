@@ -47,8 +47,8 @@ from docopt import docopt
 import orgtool
 import orgtool.orgs
 from orgtool.utils import lookup, scan_created_accounts, get_assume_role_credentials, valid_account_id, get_logger
-from orgtool.utils import get_root_id, scan_deployed_accounts, get_account_aliases, merge_aliases, queue_threads
-from orgtool.spec import yamlfmt, string_differ, load_config, get_s3_bucket_name, validate_spec, validate_master_id
+from orgtool.utils import get_root_id, scan_deployed_accounts, get_account_aliases, merge_aliases, queue_threads, string_differ, get_s3_bucket_name, validate_master_id
+from orgtool.spec import yamlfmt, load_config, validate_spec
 # from orgtool.spec import *
 
 S3_OBJECT_KEY = 'orgtool'
