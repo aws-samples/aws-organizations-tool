@@ -42,11 +42,12 @@ Options:
 
 import os
 import sys
-import yaml
-import logging
+# import yaml
+# import logging
 from string import Template
 import datetime
 import smtplib
+import pkg_resources
 from email.message import EmailMessage
 
 
@@ -57,9 +58,8 @@ from passwordgenerator import pwgenerator
 
 
 import orgtool
-from orgtool.utils import *
-from orgtool.spec import *
-from orgtool.reports import *
+from orgtool.utils import lookup, get_logger, get_assume_role_credentials, scan_deployed_accounts, get_account_aliases, merge_aliases
+from orgtool.spec import load_config, validate_spec
 
 
 # Relative path within orgtool project to template file used by prep_email()
@@ -94,7 +94,7 @@ def list_delegations(log, user, deployed_accounts):
     glob ('*') char, we generate the list of allowed role arns - one for
     every 'ACTIVE' account.
     """
-    groups = list(user.groups.all())
+    # groups = list(user.groups.all())
     role_arns = []
     for group in user.groups.all():
 
@@ -136,8 +136,7 @@ def format_delegation_table(delegation_arns, deployed_accounts):
         if alias is None:
             alias = str()
         spacer = (24 - len(alias)) * ' '
-        delegation_string += template.format(account_id, alias, spacer,
-                assume_role_arn.partition('role/')[2])
+        delegation_string += template.format(account_id, alias, spacer, assume_role_arn.partition('role/')[2])
     return delegation_string
 
 
@@ -181,7 +180,7 @@ def validate_user(user_name, credentials=None):
         user.load()
     except ClientError as e:
         if e.response['Error']['Code'] == 'NoSuchEntity':
-            return    
+            return
     return user
 
 
@@ -231,6 +230,7 @@ def reset_profile(log, user, login_profile, passwd, require_reset):
         log.error("user '%s' has no login profile" % user.name)
         sys.exit(1)
 
+
 def delete_profile(log, user, login_profile):
     if login_profile:
         log.info('deleting login profile for user %s' % user.name)
@@ -243,12 +243,10 @@ def set_access_key_status(log, user, enable=True):
     """Enable or disable an IAM user's access keys"""
     for key in user.access_keys.all():
         if enable and key.status == 'Inactive':
-            log.info('enabling access key %s for user %s' %
-                    (key.access_key_id, user.name))
+            log.info('enabling access key %s for user %s' % (key.access_key_id, user.name))
             key.activate()
         elif not enable and key.status == 'Active':
-            log.info('disabling access key %s for user %s' %
-                    (key.access_key_id, user.name))
+            log.info('disabling access key %s for user %s' % (key.access_key_id, user.name))
             key.deactivate()
 
 
@@ -265,7 +263,7 @@ def onetime_passwd_expired(log, user, login_profile, hours):
 def prep_email(log, aliases, deployed_accounts, user, passwd):
     """Generate email body from template"""
     log.debug("loading file: '%s'" % EMAIL_TEMPLATE)
-    trusted_id=boto3.client('sts').get_caller_identity()['Account']
+    trusted_id = boto3.client('sts').get_caller_identity()['Account']
     if aliases:
         trusted_account = aliases[trusted_id]
     else:
@@ -290,6 +288,7 @@ def build_email_message(user, message_body, spec):
     msg['To'] = lookup(spec['users'], 'Name', user.name, 'Email')
     msg['From'] = spec['org_admin_email']
     return msg
+
 
 def send_email(msg, smtp_server):
     s = smtplib.SMTP(smtp_server)
