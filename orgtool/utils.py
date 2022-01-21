@@ -4,7 +4,6 @@ import io
 import os
 import sys
 import re
-# import pkg_resources
 import difflib
 import threading
 
