@@ -4,7 +4,7 @@ import io
 import os
 import sys
 import re
-import pkg_resources
+# import pkg_resources
 import difflib
 import threading
 
@@ -81,7 +81,6 @@ def search_spec(spec, search_key, recurse_key):
 
 
 def flatten_OUs(org_spec, log, path=None):
-    
     if not path:
         if 'organizational_units' in org_spec and len(org_spec['organizational_units']) == 1:
             if org_spec['organizational_units'][0]['Name'] == 'root':
@@ -97,7 +96,7 @@ def flatten_OUs(org_spec, log, path=None):
     else:
         OUs = {}
         for ou in org_spec:
-            #ou_path = os.path.join(path,ou['Name'])
+            # ou_path = os.path.join(path,ou['Name'])
             if (path == '/'):
                 ou_path = path + ou['Name']
             else:
@@ -272,10 +271,9 @@ def scan_deployed_accounts(log, org_client):
     # # # only return accounts that have an 'Name' key
     # # return [d for d in deployed_accounts if "Name" in d]
 
-    # returrn all accounts, no filter. 
+    # returrn all accounts, no filter.
     # The check have to be more strict and done outside of this function
     return deployed_accounts
-
 
 
 def scan_deployed_tags_for_resource(log, org_client, ressource_id):
@@ -379,8 +377,9 @@ def yamlfmt(dict_obj):
 def yamlfmtfile(dict_obj, file):
     """Convert a dictionary object into a yaml formated file"""
     yaml = ruamel.yaml.YAML()
-    with open(file, "w") as f: 
+    with open(file, "w") as f:
         yaml.dump(dict_obj, f)
+
 
 def dump_to_spec_config(args, log, org_spec, config_key, spec_dir_template=None):
     log.debug("dump yaml dict to file config")
@@ -417,8 +416,8 @@ def dump_to_spec_config(args, log, org_spec, config_key, spec_dir_template=None)
     log.debug("\r\n" + yamlfmt(spec_config))
 
     # update the config file if --exec
-    if args["--exec"]: 
-        yamlfmtfile(spec_config,dest_file_config_path)
+    if args["--exec"]:
+        yamlfmtfile(spec_config, dest_file_config_path)
         log.debug('Yaml dict configuration {} dump into {} with success'.format(config_key, dest_file_config_path))
 
 
