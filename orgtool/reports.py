@@ -4,12 +4,13 @@ Report maker utility and query functions
 Todo:
     allow reporting on single account or short list of accounts
     substitute account alias for account id in reports
-    
 """
 
 import io
 import csv
-from orgtool.utils import *
+import boto3
+from orgtool.utils import get_assume_role_credentials, queue_threads, get_iam_objects, yamlfmt, get_account_aliases, lookup
+from orgtool.loginprofile import validate_user, validate_login_profile, user_report
 
 
 # Report_maker utilities
@@ -53,7 +54,7 @@ def report_maker(log, accounts, role, query_func, report_header=None, **qf_args)
         for msg in messages:
             log.info(msg)
 
-    
+
 # report_maker query functions
 
 def user_group_report(credentials, verbose=False):
@@ -86,7 +87,7 @@ def user_group_report(credentials, verbose=False):
             group_info.append(g['Arn'])
     if group_info:
         messages.append(yamlfmt(dict(Groups=group_info)))
-    #if groups:
+    # if groups:
     #    messages.append("Groups:")
     #    if verbose:
     #        messages.append(yamlfmt(groups))
@@ -109,7 +110,7 @@ def credentials_report(credentials):
     iam_client = boto3.client('iam', **credentials)
     try:
         response = iam_client.get_credential_report()
-    except Exception as e:
+    except Exception:
         response = iam_client.generate_credential_report()
         messages.append(yamlfmt(response))
         return messages
@@ -122,8 +123,7 @@ def credentials_report(credentials):
         for key in reader.fieldnames:
             user['UserName'] = row['user']
             user['Arn'] = row['arn']
-            if (key not in ['user', 'arn'] and 
-                    row[key] not in ['N/A', 'not_supported', 'no_information', 'false']):
+            if (key not in ['user', 'arn'] and row[key] not in ['N/A', 'not_supported', 'no_information', 'false']):
                 user[key] = row[key]
         user_info.append(user)
 
@@ -142,15 +142,14 @@ def role_report(credentials, verbose=False):
     iam_resource = boto3.resource('iam', **credentials)
 
     policy_info = []
-    custom_policies = get_iam_objects(iam_client.list_policies, 'Policies', 
-            dict(Scope='Local'))
+    custom_policies = get_iam_objects(iam_client.list_policies, 'Policies', dict(Scope='Local'))
     for p in custom_policies:
         if verbose:
             policy_version_id = iam_resource.Policy(p['Arn']).default_version_id
             policy_info.append(dict(
                 Arn=p['Arn'],
                 Statement=iam_resource.PolicyVersion(
-                    p['Arn'], 
+                    p['Arn'],
                     policy_version_id
                 ).document['Statement'],
             ))
@@ -187,7 +186,7 @@ def account_authorization_report(credentials, verbose=False):
 
     user_info = []
     users = get_iam_objects(
-            iam_client.get_account_authorization_details, 
+            iam_client.get_account_authorization_details,
             'UserDetailList',
             dict(Filter=['User']))
     for u in users:
@@ -200,7 +199,7 @@ def account_authorization_report(credentials, verbose=False):
 
     group_info = []
     groups = get_iam_objects(
-            iam_client.get_account_authorization_details, 
+            iam_client.get_account_authorization_details,
             'GroupDetailList',
             dict(Filter=['Group']))
     for u in groups:
@@ -213,7 +212,7 @@ def account_authorization_report(credentials, verbose=False):
 
     role_info = []
     roles = get_iam_objects(
-            iam_client.get_account_authorization_details, 
+            iam_client.get_account_authorization_details,
             'RoleDetailList',
             dict(Filter=['Role']))
     for u in roles:
@@ -226,7 +225,7 @@ def account_authorization_report(credentials, verbose=False):
 
     policy_info = []
     policies = get_iam_objects(
-            iam_client.get_account_authorization_details, 
+            iam_client.get_account_authorization_details,
             'Policies',
             dict(Filter=['LocalManagedPolicy']))
     for u in policies:
@@ -237,17 +236,13 @@ def account_authorization_report(credentials, verbose=False):
     if policy_info:
         messages.append(yamlfmt(dict(CustomPolicies=policy_info)))
 
-
     return messages
-
-
-
 
 # Obsolete resource display functions. For reference only
 #
-#display_provisioned_users(log, args, deployed, auth_spec, credentials)
-#display_provisioned_groups(log, args, deployed, credentials)
-#display_roles_in_accounts(log, args, deployed, auth_spec)
+# display_provisioned_users(log, args, deployed, auth_spec, credentials)
+# display_provisioned_groups(log, args, deployed, credentials)
+# display_roles_in_accounts(log, args, deployed, auth_spec)
 
 
 def display_provisioned_users(log, args, deployed, auth_spec, credentials):
@@ -258,8 +253,7 @@ def display_provisioned_users(log, args, deployed, auth_spec, credentials):
     overbar = '_' * len(header)
     log.info("\n%s\n%s\n" % (overbar, header))
     if args['--full']:
-        aliases = get_account_aliases(log, deployed['accounts'],
-                args['--org-access-role'])
+        aliases = get_account_aliases(log, deployed['accounts'], args['--org-access-role'])
     for name in sorted([u['UserName'] for u in deployed['users']]):
         arn = lookup(deployed['users'], 'UserName', name, 'Arn')
         if args['--full']:
@@ -285,9 +279,7 @@ def display_provisioned_groups(log, args, deployed, credentials):
         group = iam_resource.Group(group_name)
         members = list(group.users.all())
         attached_policies = list(group.attached_policies.all())
-        assume_role_resources = [p.policy_document['Statement'][0]['Resource']
-                for p in list(group.policies.all()) if
-                p.policy_document['Statement'][0]['Action'] == 'sts:AssumeRole']
+        assume_role_resources = [p.policy_document['Statement'][0]['Resource'] for p in list(group.policies.all()) if p.policy_document['Statement'][0]['Action'] == 'sts:AssumeRole']
         overbar = '_' * (8 + len(group_name))
         messages.append('\n%s' % overbar)
         messages.append("%s\t%s" % ('Name:', group_name))
@@ -303,8 +295,7 @@ def display_provisioned_groups(log, args, deployed, credentials):
             messages.append("  Account\tRole ARN")
             profiles = {}
             for role_arn in assume_role_resources:
-                account_name = lookup(deployed['accounts'], 'Id',
-                        role_arn.split(':')[4], 'Name')
+                account_name = lookup(deployed['accounts'], 'Id', role_arn.split(':')[4], 'Name')
                 if account_name:
                     profiles[account_name] = role_arn
             for account_name in sorted(profiles.keys()):
@@ -322,8 +313,7 @@ def display_provisioned_groups(log, args, deployed, credentials):
         # gather report data from groups
         report = {}
         iam_resource = boto3.resource('iam', **credentials)
-        queue_threads(log, group_names, display_group, f_args=(report, iam_resource),
-                thread_count=10)
+        queue_threads(log, group_names, display_group, f_args=(report, iam_resource), thread_count=10)
         for group_name, messages in sorted(report.items()):
             for msg in messages:
                 log.info(msg)
@@ -373,8 +363,7 @@ def display_roles_in_accounts(log, args, deployed, auth_spec):
                         messages.append("  %s" % role.name)
                         messages.append("    Arn:\t%s" % role.arn)
                         messages.append("    Principal:\t%s" % principal['AWS'])
-                        attached = [p.policy_name for p
-                                in list(role.attached_policies.all())]
+                        attached = [p.policy_name for p in list(role.attached_policies.all())]
                         if attached:
                             messages.append("    Attached Policies:")
                             for policy in attached:
@@ -383,8 +372,7 @@ def display_roles_in_accounts(log, args, deployed, auth_spec):
 
     # gather report data from accounts
     report = {}
-    queue_threads(log, deployed['accounts'], display_role, f_args=(report, auth_spec),
-            thread_count=10)
+    queue_threads(log, deployed['accounts'], display_role, f_args=(report, auth_spec), thread_count=10)
     # process the reports
     header = "Provisioned IAM Roles in all Org Accounts:"
     overbar = '_' * len(header)
