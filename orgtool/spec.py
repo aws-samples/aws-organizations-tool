@@ -5,11 +5,11 @@ import ruamel.yaml
 
 import boto3
 from botocore.exceptions import ClientError
-from cerberus import Validator, schema_registry
+# from cerberus import Validator, schema_registry
 from pkg_resources import parse_version
 
 import orgtool
-from orgtool.utils import *
+from orgtool.utils import yamlfmt, valid_account_id, flatten_OUs, lookup
 from orgtool.validator import file_validator
 
 # Spec parser defaults
@@ -89,7 +89,7 @@ def get_spec_dir(log, args, config):
 
 def load_config(log, args):
     """
-    Assemble config options from various sources: cli options, config_file 
+    Assemble config options from various sources: cli options, config_file
     params, defaults, etc., and merge them into 'args' dict.
     When we are done we should have found all of the following:
 
@@ -102,9 +102,9 @@ def load_config(log, args):
     args['--master-account-id'] = get_master_account_id(log, args, config)
     args['--spec-dir'] = get_spec_dir(log, args, config)
     if not ('--org-access-role' in args and args['--org-access-role']):
-        args['--org-access-role'] =  config.get('org_access_role')
-    if not ( '--auth-account-id' in args and args['--auth-account-id']):
-        args['--auth-account-id'] =  config.get('auth_account_id')
+        args['--org-access-role'] = config.get('org_access_role')
+    if not ('--auth-account-id' in args and args['--auth-account-id']):
+        args['--auth-account-id'] = config.get('auth_account_id')
     return args
 
 
@@ -127,6 +127,7 @@ def validate_spec_file(log, spec_file, validator, errors):
         errors += 1
         return (None, errors)
 
+
 def validate_spec_dict(log, spec, validator, errors):
 
     if validator.validate(spec):
@@ -137,6 +138,7 @@ def validate_spec_dict(log, spec, validator, errors):
         log.debug("validator errors:\n{}".format(yamlfmt(validator.errors)))
         errors += 1
         return (None, errors)
+
 
 def validate_package_version(log, spec_dir):
     common_file_name = next(
@@ -157,10 +159,7 @@ def validate_package_version(log, spec_dir):
             sys.exit(1)
     log.debug('minimum_version: {}'.format(common_spec['minimum_version']))
     if not parse_version(orgtool.__version__) >= parse_version(common_spec['minimum_version']):
-        log.critical('Installed orgtool package does not meet minimum version requirement. '
-                     'Please update your orgtool package to version "{}" or higher.'.format(
-            common_spec['minimum_version']
-        ))
+        log.critical('Installed orgtool package does not meet minimum version requirement. Please update your orgtool package to version "{}" or higher.'.format(common_spec['minimum_version']))
         sys.exit(1)
     return
 
@@ -179,7 +178,7 @@ def validate_spec(log, args, recusive=True):
     validator = file_validator(log)
     spec_object = {}
     errors = 0
-    for dirpath, dirnames, filenames in os.walk(spec_dir, topdown = True):
+    for dirpath, dirnames, filenames in os.walk(spec_dir, topdown=True):
         dirnames[:] = [d for d in dirnames if not d.startswith('.')]
         for f in filenames:
             log.debug("considering file {}".format(f))
@@ -193,19 +192,17 @@ def validate_spec(log, args, recusive=True):
 
     # # # # validate aggregated spec_object
     # # # # validator = spec_validator(log)
-    # # # validator = file_validator(log)    
+    # # # validator = file_validator(log)
 
     # # # if not validator.validate(spec_object):
     # # #     log.critical("spec_object validation failed:\n{}".format(yamlfmt(validator.errors)))
     # # #     sys.exit(1)
     # # # log.debug("spec_object validation succeeded")
-    
     # scan_manage_ou_path(spec_object['organizational_units'], '/')
 
     if recusive:
         OUs = flatten_OUs(spec_object, log)
         # ous = search_spec(spec_object['organizational_units'][0], 'Path', 'Child_OU')
-        
         for path in OUs:
             ou = OUs[path]
             if 'IncludeConfigPath' in ou:
@@ -214,78 +211,77 @@ def validate_spec(log, args, recusive=True):
                 child_args = load_config(log, child_args)
 
                 child_spec = validate_spec(log, child_args)
-                
+
                 # merge child_spec in spec_object
                 # check if included config fit with current config
-                error=0
+                error = 0
                 if child_args['--master-account-id'] != args['--master-account-id']:
                     log.critical("included config validation failed for {}. Value shoiuld be the same!".format('--master-account-id'))
-                    error = error +1
+                    error = error + 1
                 if child_args['--org-access-role'] != args['--org-access-role']:
                     log.critical("included config validation failed for {}. Value shoiuld be the same!".format('--org-access-role'))
-                    error = error +1
+                    error = error + 1
                 if child_args['--auth-account-id'] != args['--auth-account-id']:
                     log.critical("included config validation failed for {}. Value shoiuld be the same!".format('--auth-account-id'))
-                    error = error +1
+                    error = error + 1
 
-                
                 # check if monted point fit with included location
                 if len(child_spec['organizational_units']) != 1:
                     log.critical("included config validation failed. The included org tree should start with one single OU, corresponding to the Parent OU mounting point")
-                    error = error +1
+                    error = error + 1
                 if child_spec['organizational_units'][0]['Name'] != ou['Name']:
                     log.critical("included config validation failed. The included org tree should start with one single OU with the same Name as the corresponding Parent OU mounting point")
-                    error = error +1
+                    error = error + 1
                 # if os.path.join(child_spec['organizational_units'][0]['MountingOUPath'], child_spec['organizational_units'][0]['Name']) != ou['Path']:
-                #if os.path.join(child_spec['organizational_units'][0]['MountingOUPath'], child_spec['organizational_units'][0]['Name']) != path:
+                # if os.path.join(child_spec['organizational_units'][0]['MountingOUPath'], child_spec['organizational_units'][0]['Name']) != path:
                 if (child_spec['organizational_units'][0]['MountingOUPath'] + '/' + child_spec['organizational_units'][0]['Name']) != path:
                     log.critical("included config validation failed. The included org Mounting point should the corresponding to parent OU path")
-                    error = error +1
+                    error = error + 1
                 if 'Child_OU' in ou:
                     log.critical("Mounting point OU should not have child OU already defined")
-                    error = error +1
-                if not 'Child_OU' in child_spec['organizational_units'][0]:
+                    error = error + 1
+                if 'Child_OU' not in child_spec['organizational_units'][0]:
                     log.critical("The OU tree to include in not present in the configuration to include")
-                    error = error +1
+                    error = error + 1
 
                 # check if no duplicate for accounts
                 if 'accounts' in child_spec and child_spec['accounts'] and 'accounts' in spec_object and spec_object['accounts']:
                     for account in child_spec['accounts']:
                         if lookup(spec_object['accounts'], 'Name', account['Name']):
                             log.critical(("Duplicate account ({}) found when merging included config {}.").format(account['Name'], ou['IncludeConfigPath']))
-                            error = error +1
+                            error = error + 1
 
                 # check if no ducplicate for SCPs
                 if 'sc_policies' in child_spec and child_spec['sc_policies'] and 'sc_policies' in spec_object and spec_object['sc_policies']:
                     for scp in child_spec['sc_policies']:
                         if lookup(spec_object['sc_policies'], 'PolicyName', scp['PolicyName']):
                             log.critical(("Duplicate SCP ({}) found when merging included config {}.").format(scp['PolicyName'], ou['IncludeConfigPath']))
-                            error = error +1
+                            error = error + 1
                         if 'PrefixRequired' in ou and ou['PrefixRequired'] and not (scp['PolicyName'].startswith(ou['PrefixRequired'] + '.')):
                             log.critical(("SCP ({}) doesn't match the namming convention defined with prefix {}.").format(scp['PolicyName'], ou['PrefixRequired']))
-                            error = error +1
-                
+                            error = error + 1
+
                 # check if no ducplicate for delegations
                 if 'delegations' in child_spec and child_spec['delegations'] and 'delegations' in spec_object and spec_object['delegations']:
                     for delegation in child_spec['delegations']:
                         if lookup(spec_object['delegations'], 'RoleName', delegation['RoleName']):
                             log.critical(("Duplicate delegation ({}) found when merging included config {}.").format(delegation['RoleName'], ou['IncludeConfigPath']))
-                            error = error +1
+                            error = error + 1
                         if 'PrefixRequired' in ou and ou['PrefixRequired'] and not (delegation['RoleName'].startswith(ou['PrefixRequired'] + '.')):
                             log.critical(("Delegation ({}) doesn't match the namming convention defined with prefix {}.").format(delegation['RoleName'], ou['PrefixRequired']))
-                            error = error +1
+                            error = error + 1
 
                 if error:
                     log.critical("schema validation failed. Run in debug mode for details")
                     sys.exit(1)
                 # check if referenced accounts in the org tree of the included config are present into the accounts list ????
                 # check if referenced SCPs in the org tree of the included config are present into the SCPs list ????
-                
+
                 # finally merge org ou tree
                 # merge child_spec in spec_object
                 if 'Child_OU' in child_spec['organizational_units'][0] and child_spec['organizational_units'][0]['Child_OU']:
                     ou['Child_OU'] = child_spec['organizational_units'][0]['Child_OU']
-                    
+
                 # merge SC_Policies at root level both config
                 if 'SC_Policies' in child_spec['organizational_units'][0]:
                     if 'SC_Policies' in ou and ou['SC_Policies']:
@@ -300,8 +296,8 @@ def validate_spec(log, args, recusive=True):
                     else:
                         ou['Tags'] = child_spec['organizational_units'][0]['Tags']
 
-                # ou['Child_OU'] = child_spec['organizational_units'][0]['Child_OU']            
-                
+                # ou['Child_OU'] = child_spec['organizational_units'][0]['Child_OU']
+
                 # finally merge accounts
                 if 'accounts' in child_spec and child_spec['accounts']:
                     if 'accounts' in spec_object and spec_object['accounts']:
@@ -315,17 +311,15 @@ def validate_spec(log, args, recusive=True):
                         spec_object['sc_policies'] += child_spec['sc_policies']
                     else:
                         spec_object['sc_policies'] = child_spec['sc_policies']
-                
+
                 # finally merge Delegations
                 if 'delegations' in child_spec and child_spec['delegations']:
                     if 'delegations' in spec_object and spec_object['delegations']:
                         spec_object['delegations'] += child_spec['delegations']
                     else:
                         spec_object['delegations'] = child_spec['delegations']
-        
 
     return spec_object
-
 
 
 # def scan_manage_ou_path(spec, path):
@@ -336,4 +330,3 @@ def validate_spec(log, args, recusive=True):
 #             ou['Path'] = path + ou['Name']
 #         if 'Child_OU' in ou and ou['Child_OU']:
 #             scan_manage_ou_path(ou['Child_OU'], ou['Path'] + '/')
-
