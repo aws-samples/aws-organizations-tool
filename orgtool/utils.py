@@ -15,7 +15,6 @@ except ImportError:
 import boto3
 from botocore.exceptions import ClientError
 
-# import yaml
 import ruamel.yaml
 import logging
 
