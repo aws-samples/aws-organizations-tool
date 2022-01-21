@@ -21,22 +21,23 @@ Options:
   -V, --version             Display version info and exit.
   --config FILE             AWS Org config file in yaml format.
   --spec-dir PATH           Location of AWS Org specification file directory.
-  --master-account-id ID    AWS account Id of the Org master account.    
+  --master-account-id ID    AWS account Id of the Org master account.
   --auth-account-id ID      AWS account Id of the authentication account.
   --org-access-role ROLE    IAM role for traversing accounts in the Org.
   --exec                    Execute proposed changes to AWS Org.
   -q, --quiet               Repress log output.
   -d, --debug               Increase log level to 'DEBUG'.
   -dd                       Include botocore and boto3 logs in log stream.
-  
 
 """
 
 
-import yaml
+# import yaml
 import json
-import time
-import shutil
+import sys
+import os
+# import time
+# import shutil
 
 
 import boto3
@@ -44,8 +45,9 @@ from docopt import docopt
 
 import orgtool
 import orgtool.utils
-from orgtool.utils import *
-from orgtool.spec import *
+from orgtool.utils import yamlfmt, scan_deployed_tags_for_resource, lookup, get_account_aliases, ensure_absent, string_differ, search_spec
+from orgtool.utils import get_logger, get_assume_role_credentials, get_root_id, scan_deployed_accounts, validate_master_id, flatten_OUs
+from orgtool.spec import load_config, validate_spec
 
 
 # def validate_accounts_unique_in_org_spec(log, root_spec):
@@ -88,7 +90,7 @@ def validate_accounts_unique_in_org_deployed(log, deployed_accounts):
             if count > 1:
                 duplicate = True
                 duplicate_values.append(account['Name'])
-                account_ids = [ sub['Id'] for sub in accounts ]
+                account_ids = [sub['Id'] for sub in accounts]
                 log.error("Invalide deployed org: Account name should be unique. Duplicate account name '%s' found for Ids %s." % (account['Name'], str(account_ids)))
 
     # # check for deployed[ou] ##--> to stay commented for now
@@ -115,9 +117,9 @@ def enable_policy_type_in_root(org_client, root_id):
     organization root.
     """
     p_type = org_client.list_roots()['Roots'][0]['PolicyTypes']
-    if (not p_type or (p_type[0]['Type'] == 'SERVICE_CONTROL_POLICY'
-            and p_type[0]['Status'] != 'ENABLED')):
+    if (not p_type or (p_type[0]['Type'] == 'SERVICE_CONTROL_POLICY' and p_type[0]['Status'] != 'ENABLED')):
         org_client.enable_policy_type(RootId=root_id, PolicyType='SERVICE_CONTROL_POLICY')
+
 
 def get_parent_id(org_client, account_id):
     """
@@ -128,17 +130,18 @@ def get_parent_id(org_client, account_id):
     try:
         len(parents) == 1
         return parents[0]['Id']
-    except:
-        raise RuntimeError("API Error: account '%s' has more than one parent: "
-                % (account_id, parents))
+    except Exception:
+        raise RuntimeError("API Error: account '%s' has more than one parent: %s" % (account_id, parents))
 
-def list_policies_in_ou (org_client, ou_id):
+
+def list_policies_in_ou(org_client, ou_id):
     """
     Query deployed AWS organanization.  Return a list (of type dict)
     of policies attached to OrganizationalUnit referenced by 'ou_id'.
     """
     policies_in_ou = org_client.list_policies_for_target(TargetId=ou_id, Filter='SERVICE_CONTROL_POLICY')['Policies']
     return sorted([ou['Name'] for ou in policies_in_ou])
+
 
 def scan_deployed_policies(org_client):
     """
@@ -152,21 +155,19 @@ def scan_deployed_policies(org_client):
         response = org_client.list_policies(Filter='SERVICE_CONTROL_POLICY', NextToken=response.get('NextToken'))
         policies += response['Policies']
 
-
     return policies
 
-    
 
 def build_deployed_ou_table(log, org_client, parent_name, parent_id, parent_path, deployed_ou):
     # recusive sub function to build the 'deployed_ou' table
-    response = org_client.list_organizational_units_for_parent( ParentId=parent_id)
+    response = org_client.list_organizational_units_for_parent(ParentId=parent_id)
     child_ou = response['OrganizationalUnits']
     while 'NextToken' in response and response['NextToken']:
         response = org_client.list_organizational_units_for_parent(
             ParentId=parent_id, NextToken=response['NextToken'])
         child_ou += response['OrganizationalUnits']
 
-    response = org_client.list_accounts_for_parent( ParentId=parent_id)
+    response = org_client.list_accounts_for_parent(ParentId=parent_id)
     accounts = response['Accounts']
     while 'NextToken' in response and response['NextToken']:
         response = org_client.list_accounts_for_parent(
@@ -177,14 +178,14 @@ def build_deployed_ou_table(log, org_client, parent_name, parent_id, parent_path
 
     if not deployed_ou:
         deployed_ou.append(dict(
-                Name = parent_name,
-                Id = parent_id,
-                Path = parent_path,
-                Key = parent_id,
-                Child_OU = [ou['Name'] for ou in child_ou if 'Name' in ou],
-                Child_OU_Path = [(parent_path + '/' + ou['Name']) for ou in child_ou if 'Name' in ou],
-                #Tags = org_client.list_tags_for_resource(ResourceId=parent_id)['Tags'],
-                Accounts = [acc['Name'] for acc in accounts if 'Name' in acc]))
+            Name=parent_name,
+            Id=parent_id,
+            Path=parent_path,
+            Key=parent_id,
+            Child_OU=[ou['Name'] for ou in child_ou if 'Name' in ou],
+            Child_OU_Path=[(parent_path + '/' + ou['Name']) for ou in child_ou if 'Name' in ou],
+            # Tags = org_client.list_tags_for_resource(ResourceId=parent_id)['Tags'],
+            Accounts=[acc['Name'] for acc in accounts if 'Name' in acc]))
     else:
         for ou in deployed_ou:
             if ou['Path'] == parent_path:
@@ -199,44 +200,51 @@ def build_deployed_ou_table(log, org_client, parent_name, parent_id, parent_path
         deployed_ou.append(ou)
         build_deployed_ou_table(log, org_client, ou['Name'], ou['Id'], parent_path + '/' + ou['Name'], deployed_ou)
 
+
 def scan_deployed_ou(log, org_client, root_id):
     """
     Recursively traverse deployed AWS Organization.  Return list of
-    organizational unit dictionaries.  
+    organizational unit dictionaries.
     """
-    # build the table 
+    # build the table
     deployed_ou = []
     build_deployed_ou_table(log, org_client, 'root', root_id, '/root', deployed_ou)
     log.debug('\n' + yamlfmt(deployed_ou))
     return deployed_ou
+
 
 def reverse_ou(org_client, log, deployed, ou_path, default_sc_policy):
     deployed_ou = lookup(deployed['ou'], 'Path', ou_path)
     revers = []
     ou = dict()
     ou["Name"] = deployed_ou["Name"]
-    if "Accounts" in deployed_ou and len(deployed_ou["Accounts"]) > 0: ou["Accounts"] = deployed_ou["Accounts"]
-    #if "Tags" in deployed_ou and len(deployed_ou["Tags"]) > 0: ou["Tags"] = deployed_ou["Tags"]
+    if "Accounts" in deployed_ou and len(deployed_ou["Accounts"]) > 0:
+        ou["Accounts"] = deployed_ou["Accounts"]
+    # if "Tags" in deployed_ou and len(deployed_ou["Tags"]) > 0: ou["Tags"] = deployed_ou["Tags"]
     tags = scan_deployed_tags_for_resource(log, org_client, deployed_ou["Id"])
-    if len(tags) > 0: ou["Tags"] = tags
-    if "Child_OU_Path" in deployed_ou and len(deployed_ou['Child_OU_Path']) > 0: ou["Child_OU"] = [reverse_ou(org_client, log, deployed, child_OU_Path, default_sc_policy)[0] for child_OU_Path in deployed_ou['Child_OU_Path']] 
+    if len(tags) > 0:
+        ou["Tags"] = tags
+    if "Child_OU_Path" in deployed_ou and len(deployed_ou['Child_OU_Path']) > 0:
+        ou["Child_OU"] = [reverse_ou(org_client, log, deployed, child_OU_Path, default_sc_policy)[0] for child_OU_Path in deployed_ou['Child_OU_Path']]
     policies = list_policies_in_ou(org_client, deployed_ou["Id"])
     # # ou["SC_Policies"] = policies
     if len(policies) > 1:
         policies.remove(default_sc_policy)
         ou["SC_Policies"] = policies
-    revers.append(ou)    
+    revers.append(ou)
     return revers
+
 
 def reverse_policies(org_client, log, deployed):
     policies = []
     for policy in deployed['policies']:
         policies.append(dict(
-            PolicyName = policy['Name'],
-            Description = policy['Description'],
-            Statement = json.loads(org_client.describe_policy(PolicyId=policy['Id'])['Policy']['Content'])["Statement"]
+            PolicyName=policy['Name'],
+            Description=policy['Description'],
+            Statement=json.loads(org_client.describe_policy(PolicyId=policy['Id'])['Policy']['Content'])["Statement"]
         ))
     return policies
+
 
 def reverse_accounts(org_client, log, deployed, org_access_role):
     aliases = get_account_aliases(log, deployed["accounts"], org_access_role)
@@ -247,14 +255,17 @@ def reverse_accounts(org_client, log, deployed, org_access_role):
             item["Name"] = account["Name"]
             item["Email"] = account["Email"]
             tags = scan_deployed_tags_for_resource(log, org_client, account["Id"])
-            if len(tags) > 0: item["Tags"] = tags
-            if account["Id"] in aliases and aliases[account["Id"]]: item["Alias"] = aliases[account["Id"]]
+            if len(tags) > 0:
+                item["Tags"] = tags
+            if account["Id"] in aliases and aliases[account["Id"]]:
+                item["Alias"] = aliases[account["Id"]]
             accounts.append(item)
         else:
             log.info("Account %s (%s) is %s, then not added to the configuration" % (account["Name"], account["Id"], account["Status"]))
             pass
 
     return accounts
+
 
 def display_provisioned_policies(org_client, log, deployed):
     """
@@ -273,6 +284,7 @@ def display_provisioned_policies(org_client, log, deployed):
                 PolicyId=policy['Id'])['Policy']['Content']),
                 indent=2,
                 separators=(',', ': ')))
+
 
 def display_provisioned_ou(org_client, log, deployed_ou, parent_path, indent=0):
     """
@@ -297,11 +309,12 @@ def display_provisioned_ou(org_client, log, deployed_ou, parent_path, indent=0):
     # look for child OUs
     if child_ou_list:
         log.info(tab*indent + tab + 'Child_OU:')
-        indent+=2
+        indent += 2
         for ou_Name in child_ou_list:
             ou_path = parent_path + '/' + ou_Name
             # recurse
             display_provisioned_ou(org_client, log, deployed_ou, ou_path, indent)
+
 
 def manage_account_moves(org_client, args, log, deployed, ou_spec, dest_parent_id, ou_spec_path):
     """
@@ -342,6 +355,7 @@ def manage_account_moves(org_client, args, log, deployed, ou_spec, dest_parent_i
                         if dest and source:
                             break
 
+
 def place_unmanged_accounts(org_client, args, log, deployed, account_list, dest_parent):
     """
     Move any unmanaged accounts into the default OU.
@@ -349,16 +363,16 @@ def place_unmanged_accounts(org_client, args, log, deployed, account_list, dest_
     log.warn("move_unmanaged_account: True - New config to control if unmanaged account move to default OU")
     for account in account_list:
         account_id = lookup(deployed['accounts'], 'Name', account, 'Id')
-        dest_parent_id   = lookup(deployed['ou'], 'Name', dest_parent, 'Id')
+        dest_parent_id = lookup(deployed['ou'], 'Name', dest_parent, 'Id')
         source_parent_id = get_parent_id(org_client, account_id)
         if dest_parent_id and dest_parent_id != source_parent_id:
-            log.info("Moving unmanged account '%s' to default OU '%s'" %
-                    (account, dest_parent))
+            log.info("Moving unmanged account '%s' to default OU '%s'" % (account, dest_parent))
             if args['--exec']:
                 org_client.move_account(
                         AccountId=account_id,
                         SourceParentId=source_parent_id,
                         DestinationParentId=dest_parent_id)
+
 
 def manage_policies(org_client, args, log, deployed, org_spec, withdelete=True):
     """
@@ -380,8 +394,7 @@ def manage_policies(org_client, args, log, deployed, org_spec, withdelete=True):
                 log.info("Deleting policy '%s'" % (policy_name))
                 # dont delete attached policy
                 if org_client.list_targets_for_policy(PolicyId=policy['Id'])['Targets']:
-                    log.error("Cannot delete policy '%s'. Still attached to OU" %
-                            policy_name)
+                    log.error("Cannot delete policy '%s'. Still attached to OU" % policy_name)
                 elif args['--exec']:
                     org_client.delete_policy(PolicyId=policy['Id'])
             continue
@@ -414,7 +427,7 @@ def manage_policies(org_client, args, log, deployed, org_spec, withdelete=True):
 
 def manage_policy_attachments(org_client, args, log, deployed, org_spec, ou_spec, ou_id, ou_spec_path):
     """
-    Attach or detach specified Service Control Policy to a deployed 
+    Attach or detach specified Service Control Policy to a deployed
     OrganizatinalUnit.  Do not detach the default policy ever.
     """
     # create lists policies_to_attach and policies_to_detach
@@ -425,26 +438,23 @@ def manage_policy_attachments(org_client, args, log, deployed, org_spec, ou_spec
             attached_policy_list = []
     else:
         attached_policy_list = list_policies_in_ou(org_client, ou_id)
-    
+
     if 'SC_Policies' in ou_spec and isinstance(ou_spec['SC_Policies'], list):
         spec_policy_list = ou_spec['SC_Policies']
     else:
         spec_policy_list = []
-    policies_to_attach = [p for p in spec_policy_list
-            if p not in attached_policy_list]
-    policies_to_detach = [p for p in attached_policy_list
-            if p not in spec_policy_list
-            and p != org_spec['default_sc_policy']]
+    policies_to_attach = [p for p in spec_policy_list if p not in attached_policy_list]
+    policies_to_detach = [p for p in attached_policy_list if p not in spec_policy_list and p != org_spec['default_sc_policy']]
     # attach policies
     for policy_name in policies_to_attach:
-        if not lookup(deployed['policies'],'Name',policy_name):
-            
+        if not lookup(deployed['policies'], 'Name', policy_name):
+
             if args['--exec']:
-                log.error("Error in config '{}', the policy '{}' can't be attached to the OU '{}' because the policy is not defined".format(args['--config'],policy_name,ou_spec['Path']))
+                log.error("Error in config '{}', the policy '{}' can't be attached to the OU '{}' because the policy is not defined".format(args['--config'], policy_name, ou_spec['Path']))
                 sys.exit(1)
                 # raise RuntimeError("spec-file: ou_spec: policy '%s' not defined" % policy_name)
             else:
-                log.warn("Error in config '{}', the policy '{}' couldn't be attached to the OU '{}' because the policy is not defined".format(args['--config'],policy_name,ou_spec['Path']))
+                log.warn("Error in config '{}', the policy '{}' couldn't be attached to the OU '{}' because the policy is not defined".format(args['--config'], policy_name, ou_spec['Path']))
         if not ensure_absent(ou_spec):
             log.info("Attaching policy '%s' to OU '%s'" % (policy_name, ou_spec_path))
             # log.info("Attaching policy '%s' to OU '%s'" % (policy_name, ou_spec['Name']))
@@ -461,6 +471,7 @@ def manage_policy_attachments(org_client, args, log, deployed, org_spec, ou_spec
                     PolicyId=lookup(deployed['policies'], 'Name', policy_name, 'Id'),
                     TargetId=ou_id)
 
+
 def manage_ou(org_client, args, log, deployed, org_spec, ou_spec_list, parent_name, parent_path):
     """
     Recursive function to manage OrganizationalUnits in the AWS
@@ -475,28 +486,27 @@ def manage_ou(org_client, args, log, deployed, org_spec, ou_spec_list, parent_na
             # check for child_ou. recurse before other tasks.
             if 'Child_OU' in ou_spec:
                 manage_ou(
-                    org_client, 
-                    args, 
-                    log, 
-                    deployed, 
-                    org_spec, 
-                    ou_spec['Child_OU'], 
-                    ou_spec['Name'], 
+                    org_client,
+                    args,
+                    log,
+                    deployed,
+                    org_spec,
+                    ou_spec['Child_OU'],
+                    ou_spec['Name'],
                     ou_spec['Path'])
-                
+
             # # manage attachment first if all are removed before deletion
             # manage_policy_attachments(org_client, args, log, deployed, org_spec, ou_spec, ou['Id'], ou_spec['Path'])
             # manage_account_moves(org_client, args, log, deployed, ou_spec, ou['Id'], ou_spec['Path'])
 
-            
             # check if ou 'absent'
             if ensure_absent(ou_spec):
                 log.info("Deleting OU %s" % ou_spec['Path'])
                 # error if ou contains anything
                 error_flag = False
                 for key in ['Accounts', 'SC_Policies', 'Child_OU']:
-                # change to manage only Accouts and Child_OU
-                # for key in ['Accounts', 'Child_OU']:
+                    # change to manage only Accouts and Child_OU
+                    # for key in ['Accounts', 'Child_OU']:
                     if key in ou and ou[key]:
                         if key == 'SC_Policies':
                             log.error("Delete OU '%s'. Deployed '%s' will be unattach." % (ou_spec['Path'], key))
@@ -516,7 +526,7 @@ def manage_ou(org_client, args, log, deployed, org_spec, ou_spec_list, parent_na
                             # remove the OU
                             deployed['ou'].pop(i)
                             break
-                    
+
                     for i, item in enumerate(deployed['ou']):
                         if deployed['ou'][i]['Path'] == parent_path:
                             # remove the child_OU ref in the parent
@@ -532,9 +542,6 @@ def manage_ou(org_client, args, log, deployed, org_spec, ou_spec_list, parent_na
 
                     if args['--exec']:
                         org_client.delete_organizational_unit(OrganizationalUnitId=ou['Id'])
-                        
-
-                    
 
             # manage account and sc_policy placement in OU
             else:
@@ -545,11 +552,11 @@ def manage_ou(org_client, args, log, deployed, org_spec, ou_spec_list, parent_na
         elif not ensure_absent(ou_spec):
             log.info("Creating new OU '%s' under parent '%s'" % (ou_spec['Path'], parent_name))
 
-            parent_id = lookup(deployed['ou'],'Path',parent_path,'Id')
+            parent_id = lookup(deployed['ou'], 'Path', parent_path, 'Id')
             name = ou_spec['Name']
 
             if args['--exec']:
-                parent_id = lookup(deployed['ou'],'Path',parent_path,'Id')
+                parent_id = lookup(deployed['ou'], 'Path', parent_path, 'Id')
                 name = ou_spec['Name']
                 new_ou = org_client.create_organizational_unit(ParentId=parent_id, Name=name)['OrganizationalUnit']
 
@@ -561,52 +568,51 @@ def manage_ou(org_client, args, log, deployed, org_spec, ou_spec_list, parent_na
                 build_deployed_ou_table(log, org_client, name, new_ou['Id'], ou_spec_path, new_OUs)
                 deployed['ou'] += new_OUs
 
-
             else:
                 # if 'Accounts' in ou_spec and ou_spec['Accounts']:
                 #     accounts = ou_spec['Accounts']
                 # else:
                 #     accounts = []
-                
+
                 # if 'SC_Policies' in ou_spec and ou_spec['SC_Policies']:
                 #     scp = ou_spec['SC_Policies']
                 # else:
                 #     scp = []
-                
+
                 if 'Child_OU' in ou_spec and ou_spec['Child_OU']:
                     Child_OUs = [ou['Name'] for ou in ou_spec['Child_OU'] if 'Name' in ou]
                     Child_OUs_Path = [(parent_path + '/' + ou['Name']) for ou in ou_spec['Child_OU'] if 'Name' in ou]
                 else:
                     Child_OUs = None
                     Child_OUs_Path = None
-                
+
                 new_ou = {}
                 new_ou['Id'] = 'dryrun-' + ou_spec_path
 
                 deployed['ou'].append(dict(
-                    Name = name,
-                    Id = new_ou['Id'],
-                    Path = ou_spec_path,
-                    Key = parent_id,
-                    Child_OU = Child_OUs,
-                    Child_OU_Path = Child_OUs_Path,
-                    Accounts = [],
-                    SC_Policies = []))
+                    Name=name,
+                    Id=new_ou['Id'],
+                    Path=ou_spec_path,
+                    Key=parent_id,
+                    Child_OU=Child_OUs,
+                    Child_OU_Path=Child_OUs_Path,
+                    Accounts=[],
+                    SC_Policies=[]))
 
             # account and sc_policy placement
             manage_policy_attachments(org_client, args, log, deployed, org_spec, ou_spec, new_ou['Id'], ou_spec['Path'])
             manage_account_moves(org_client, args, log, deployed, ou_spec, new_ou['Id'], ou_spec['Path'])
-            set_ou_tags(new_ou, log, args, ou_spec, org_client)  
+            set_ou_tags(new_ou, log, args, ou_spec, org_client)
 
             if ('Child_OU' in ou_spec and isinstance(new_ou, dict) and 'Id' in new_ou):
                 manage_ou(
-                        org_client, 
-                        args, 
-                        log, 
-                        deployed, 
+                        org_client,
+                        args,
+                        log,
+                        deployed,
                         org_spec,
-                        ou_spec['Child_OU'], 
-                        name, 
+                        ou_spec['Child_OU'],
+                        name,
                         ou_spec['Path'])
 
 
@@ -614,6 +620,7 @@ def transform_tag_spec_into_list_of_dict(tag_spec):
     if tag_spec is not None:
         return [{'Key': k, 'Value': v} for k, v in tag_spec.items()]
     return []
+
 
 def sorted_tags(tag_list):
     sorted_tag_key_names = sorted([tag['Key'] for tag in tag_list])
@@ -639,13 +646,13 @@ def update_ou_tags(org_client, ou, ou_tags, tag_spec, log):
 
 
 # def get_tag_spec_for_ou_path(ou_path, ou_spec, log):
-## Recurive function to get tag_spec from yaml given an ou_path
+# Recurive function to get tag_spec from yaml given an ou_path
 #     tag_spec = {}
 
 #     for ou in ou_spec:
 #         if 'Child_OU' in ou:
 #                 tag_spec = get_tag_spec_for_ou_path(
-#                     ou_path, 
+#                     ou_path,
 #                     ou['Child_OU'],
 #                     log)
 
@@ -655,14 +662,13 @@ def update_ou_tags(org_client, ou, ou_tags, tag_spec, log):
 #             if 'Path' in ou:
 #                 if ou['Path'] == ou_path:
 #                     if 'Tags' in ou:
-#                         tag_spec = ou['Tags']  
+#                         tag_spec = ou['Tags']
 #                         tag_spec = transform_tag_spec_into_list_of_dict(tag_spec)
 #                         return tag_spec
 #                     else:
 #                         return tag_spec
 #             #else:
 #                 #log.warn('Path of organizational unit ' + ou['Name'] + ' could not be identified. This might cause empty tag specification.')
-        
 #     return tag_spec
 
 def set_ou_tags(ou, log, args, ou_spec, org_client):
@@ -673,7 +679,7 @@ def set_ou_tags(ou, log, args, ou_spec, org_client):
         tag_spec = {}
     tag_spec = transform_tag_spec_into_list_of_dict(tag_spec)
 
-    #tag_spec = get_tag_spec_for_ou_path(ou['Path'], ou_spec['organizational_units'], log)
+    # tag_spec = get_tag_spec_for_ou_path(ou['Path'], ou_spec['organizational_units'], log)
     ou_tags = {}
     if str(ou['Id']).startswith('dryrun-'):
         log.debug('In dryrun mode for a new OU, no need to get the existing tags')
@@ -704,6 +710,7 @@ def main():
     args = docopt(__doc__, version=orgtool.__version__)
     core(args)
 
+
 def core(args):
     log = get_logger(args)
     log.debug(args)
@@ -717,11 +724,11 @@ def core(args):
     org_client = boto3.client('organizations', **credentials)
     root_id = get_root_id(org_client)
     deployed = dict(
-        policies = scan_deployed_policies(org_client),
-        accounts = scan_deployed_accounts(log, org_client),
-        ou = scan_deployed_ou(log, org_client, root_id))
+        policies=scan_deployed_policies(org_client),
+        accounts=scan_deployed_accounts(log, org_client),
+        ou=scan_deployed_ou(log, org_client, root_id))
 
-    validate_accounts_unique_in_org_deployed(log, deployed['accounts'])     
+    validate_accounts_unique_in_org_deployed(log, deployed['accounts'])
 
     if args['report']:
         log.info("To get files, use the command orgtoolconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]")
@@ -735,21 +742,19 @@ def core(args):
         display_provisioned_ou(org_client, log, deployed['ou'], '/root')
         display_provisioned_policies(org_client, log, deployed)
 
-         
-
     if args['organization']:
         org_spec = validate_spec(log, args)
         root_spec = lookup(org_spec['organizational_units'], 'Name', 'root')
         root_spec['Path'] = '/root'
         validate_master_id(org_client, org_spec)
-        
+
         # validate_accounts_unique_in_org_spec(log, root_spec)
 
         managed = dict(
-                accounts = search_spec(root_spec, 'Accounts', 'Child_OU'),
+                accounts=search_spec(root_spec, 'Accounts', 'Child_OU'),
                 # ou = search_spec(root_spec, 'Name', 'Child_OU'),
-                ou = flatten_OUs(org_spec, log),
-                policies = [p['PolicyName'] for p in org_spec['sc_policies']])
+                ou=flatten_OUs(org_spec, log),
+                policies=[p['PolicyName'] for p in org_spec['sc_policies']])
 
         # ensure default_sc_policy is considered 'managed'
         if org_spec['default_sc_policy'] not in managed['policies']:
@@ -763,13 +768,12 @@ def core(args):
         # manage SCP again for policies detached and to be removed (Ensure: absent)
         manage_policies(org_client, args, log, deployed, org_spec, withdelete=True)
 
-
         # check for unmanaged resources
         for key in list(managed.keys()):
-            if key ==  'accounts':
-                unmanaged= [a['Name'] for a in deployed[key] if a['Name'] not in managed[key]]
+            if key == 'accounts':
+                unmanaged = [a['Name'] for a in deployed[key] if a['Name'] not in managed[key]]
                 if unmanaged:
-                    log.warn("Unmanaged %s in Organization: %s" % (key,', '.join(unmanaged)))
+                    log.warn("Unmanaged %s in Organization: %s" % (key, ', '.join(unmanaged)))
                     # # # Laurent Delhomme AWS - June 2020
                     if org_spec['move_unmanaged_account']:
                         # append unmanaged accounts to default_ou
@@ -778,15 +782,15 @@ def core(args):
                         log.info("Updated code, move_unmanaged_account set to False therefore unmanged account not moved to default OU - Laurent Delhomme <delhom@amazon.com> AWS June 2020")
 
             if key == 'policies':
-                unmanaged= [a['Name'] for a in deployed[key] if a['Name'] not in managed[key]]
+                unmanaged = [a['Name'] for a in deployed[key] if a['Name'] not in managed[key]]
                 if unmanaged:
-                    log.warn("Unmanaged %s in Organization: %s" % (key,', '.join(unmanaged)))
+                    log.warn("Unmanaged %s in Organization: %s" % (key, ', '.join(unmanaged)))
 
             if key == 'ou':
-                unmanaged= [a for a in deployed[key] if a['Path'] not in managed[key]]
+                unmanaged = [a for a in deployed[key] if a['Path'] not in managed[key]]
                 unmanaged_path = [a['Path'] for a in deployed[key] if a['Path'] not in managed[key]]
                 if unmanaged:
-                    log.warn("Unmanaged %s in Organization: %s" % (key,', '.join(unmanaged_path)))
+                    log.warn("Unmanaged %s in Organization: %s" % (key, ', '.join(unmanaged_path)))
                     # too protect for infinity while loop
                     protection = 0
                     protection_max = len(deployed['ou'])*5
@@ -797,7 +801,7 @@ def core(args):
                             log.critical("Throw exception as a protection of the program. Too many loops to remove unmanaged OUs.")
                             sys.exit(1)
                             # if args['--exec']:
-                            #                                 
+                            #
                             # else:
                             #     log.info("dryrun - then continu - not change will be applied")
 
@@ -805,7 +809,7 @@ def core(args):
                             log.info("Deleting OU %s" % unmanaged[i]['Path'])
 
                             if 'Child_OU' in unmanaged[i] and len(unmanaged[i]['Child_OU']) != 0:
-                                 log.critical("Not able to delete OU %s because contains OU %s" % (unmanaged[i]['Path'], ', '.join(unmanaged[i]['Child_OU'])))
+                                log.critical("Not able to delete OU %s because contains OU %s" % (unmanaged[i]['Path'], ', '.join(unmanaged[i]['Child_OU'])))
 
                             else:
 
@@ -826,7 +830,7 @@ def core(args):
                                 ou_name = unmanaged[i]['Name']
                                 ou_parent_path = os.path.split(ou_path)[0]
                                 unmanaged.pop(i)
-                            
+
                                 for ii, iitem in enumerate(unmanaged):
                                     if unmanaged[ii]['Path'] == ou_parent_path:
                                         # remove the child_OU ref in the parent
@@ -842,6 +846,7 @@ def core(args):
                                 break
 
         log.info("orgtool organization done!")
+
+
 if __name__ == "__main__":
     main()
-
