@@ -25,7 +25,7 @@
 #   PrefixRequired:
 #                   Only used with IncludeConfigPath.
 #                   Prefix value to use to validate naming convention for included SCP name
-#   Tags (dict):    Tags to apply to the AWS account. The tag value can have
+#   Tags (dict):    Tags to apply to the AWS OU. The tag value can have
 #                   up to 256 characters.
 #                   Valid characters: a-z, A-Z, 0-9, and . : + = @ _ / - (hyphen)
 
