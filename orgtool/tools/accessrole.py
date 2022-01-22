@@ -37,8 +37,7 @@ def main():
             Effect='Allow',
             Principal=dict(AWS=principal),
             Action='sts:AssumeRole')
-    policy_doc = json.dumps(dict(
-            Version='2012-10-17', Statement=[statement]))
+    policy_doc = json.dumps(dict(Version='2012-10-17', Statement=[statement]))
     # create role
     print("Creating role %s" % ROLENAME)
     if args['--exec']:
@@ -48,8 +47,7 @@ def main():
                 AssumeRolePolicyDocument=policy_doc)
     # attach policy to new role
     iam_resource = boto3.resource('iam')
-    aws_policies = iam_client.list_policies(
-            Scope='AWS', MaxItems=500)['Policies']
+    aws_policies = iam_client.list_policies(Scope='AWS', MaxItems=500)['Policies']
     policy_arn = lookup(aws_policies, 'PolicyName', POLICYNAME, 'Arn')
     role = iam_resource.Role(ROLENAME)
     try:
