@@ -17,7 +17,6 @@ Options:
 """
 
 import json
-
 import boto3
 from docopt import docopt
 
