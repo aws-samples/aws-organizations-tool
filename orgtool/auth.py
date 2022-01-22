@@ -59,9 +59,9 @@ from docopt import docopt
 import orgtool
 import orgtool.orgs
 from orgtool.orgs import validate_accounts_unique_in_org_deployed
-from orgtool.utils import get_assume_role_credentials, yamlfmt, string_differ, queue_threads
+from orgtool.utils import get_assume_role_credentials, yamlfmt, string_differ, queue_threads, get_logger, validate_master_id, scan_deployed_accounts
 from orgtool.loginprofile import validate_user, validate_login_profile, onetime_passwd_expired
-from orgtool.spec import get_logger, load_config, validate_spec, validate_master_id, scan_deployed_accounts
+from orgtool.spec import load_config, validate_spec
 from orgtool.reports import report_maker, user_group_report, role_report, credentials_report, account_authorization_report
 
 
