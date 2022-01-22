@@ -555,6 +555,10 @@ class OrgToolValidator(Validator):
         """ Enforce uniqueness of fields listed in unique_in_list against a
         list of objects in value.
         """
+        if not value:
+            # existing list of value is empty, then unique list is true, no need to check
+            return
+
         # init error object
         errors = []
         # force input to list
