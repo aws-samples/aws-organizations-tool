@@ -99,7 +99,7 @@ from orgtool.validator import file_validator
 
 
 def reverse_setup(args, log):
-    # awsconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure reverse-setup --template-dir <path> --output-dir <path> [--force] --master-account-id <id> --org-access-role <role> [--exec] [-q] [-d|-dd]
 
     credentials = get_assume_role_credentials(args['--master-account-id'], args['--org-access-role'])
     if isinstance(credentials, RuntimeError):
@@ -208,7 +208,7 @@ def reverse_setup(args, log):
 
 
 def distributed_config_create(args, log, org_spec):
-    # awsconfigure distributed-config create --template-config <path> --child-config <path> [--prefix <value>] --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure distributed-config create --template-config <path> --child-config <path> [--prefix <value>] --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
 
     # --------------- ADD TO CHILD CONFIG
     child_args = {}
@@ -284,7 +284,7 @@ def distributed_config_create(args, log, org_spec):
 
 
 def distributed_config_delete(args, log, org_spec):
-    # awsconfigure distributed-config delete --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure distributed-config delete --config <path> --ou-name <name> --ou-path <path> [--exec] [-q] [-d|-dd]
 
     child_ou_path = os.path.join(args['--ou-path'], args['--ou-name'])
 
@@ -313,7 +313,7 @@ def distributed_config_delete(args, log, org_spec):
 
 
 def account_create(args, log, org_spec):
-    # awsconfigure account create --config <path> --account-name <name> --email <email> --ou-path <path> [--alias <alias> --tag <key>=<value>...] [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure account create --config <path> --account-name <name> --email <email> --ou-path <path> [--alias <alias> --tag <key>=<value>...] [--exec] [-q] [-d|-dd]
 
     account = {}
     account['Name'] = args['--account-name'][0]
@@ -364,7 +364,7 @@ def account_create(args, log, org_spec):
 
 
 def account_update(args, log, org_spec):
-    # awsconfigure account update --config <path> --account-name <name> --alias <alias> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure account update --config <path> --account-name <name> --alias <alias> [--exec] [-q] [-d|-dd]
     if len(args['--account-name']) != 1:
         log.error("provide 1 single account name")
         raise Exception("provide 1 single account name")
@@ -393,7 +393,7 @@ def account_update(args, log, org_spec):
 
 
 def account_tag_add(args, log, org_spec):
-    # awsconfigure account tag add --config <path> --account-name <name> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure account tag add --config <path> --account-name <name> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
     if len(args['--account-name']) != 1:
         log.error("provide 1 single account name")
         raise Exception("provide 1 single account name")
@@ -438,7 +438,7 @@ def account_tag_update(args, log, org_spec):
 
 
 def account_tag_remove(args, log, org_spec):
-    # awsconfigure account tag remove --config <path> --account-name <name> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure account tag remove --config <path> --account-name <name> --tag <key>=<value>... [--exec] [-q] [-d|-dd]
     if len(args['--account-name']) != 1:
         log.error("provide 1 single account name")
         raise Exception("provide 1 single account name")
@@ -478,7 +478,7 @@ def account_tag_remove(args, log, org_spec):
 
 
 def account_move(args, log, org_spec):
-    # awsconfigure account move --config <path> --account-name <name> --ou-path <path> [--config-from <path>] [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure account move --config <path> --account-name <name> --ou-path <path> [--config-from <path>] [--exec] [-q] [-d|-dd]
     if len(args['--account-name']) != 1:
         log.error("provide 1 single account name")
         raise Exception("provide 1 single account name")
@@ -564,7 +564,7 @@ def account_move(args, log, org_spec):
 
 
 def delegation_create(args, log, org_spec):
-    # awsconfigure delegation create --trusted-account <name> --account-name <name>... --description <decription> [--require-mfa] [--ensure-present --ensure-absent] --policies <policy-name>... --config <path> --role-name <name> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure delegation create --trusted-account <name> --account-name <name>... --description <decription> [--require-mfa] [--ensure-present --ensure-absent] --policies <policy-name>... --config <path> --role-name <name> [--exec] [-q] [-d|-dd]
     # - RoleName: ORGTOOL_Provisioning
     #   Ensure: present
     #   RequireMFA: False
@@ -620,7 +620,7 @@ def delegation_create(args, log, org_spec):
 
 
 def delegation_delete(args, log, org_spec):
-    # awsconfigure delegation delete --config <path> --role-name <name> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure delegation delete --config <path> --role-name <name> [--exec] [-q] [-d|-dd]
     found = False
     # search for a delegation with the same name
     if 'delegations' in org_spec and org_spec['delegations']:
@@ -641,7 +641,7 @@ def delegation_delete(args, log, org_spec):
 
 
 def delegation_trusting_add(args, log, org_spec):
-    # awsconfigure delegation trusting add --config <path>  --role-name <name> --account-name <name>... [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure delegation trusting add --config <path>  --role-name <name> --account-name <name>... [--exec] [-q] [-d|-dd]
     found = False
     changed = False
     # search for a delegation with the same name
@@ -674,7 +674,7 @@ def delegation_trusting_add(args, log, org_spec):
 
 
 def delegation_trusting_remove(args, log, org_spec):
-    # awsconfigure delegation trusting remove --config <path>  --role-name <name> --account-name <name>... [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure delegation trusting remove --config <path>  --role-name <name> --account-name <name>... [--exec] [-q] [-d|-dd]
     found = False
     changed = False
     # search for a delegation with the same name
@@ -710,8 +710,8 @@ def delegation_trusting_remove(args, log, org_spec):
 
 
 def organization_unit_create(args, log, org_spec):
-    # awsconfigure organization-unit create --config <path> --ou-path <path> [--exec] [-q] [-d|-dd]
-    # awsconfigure organization-unit create --config organization/.orgtool/root/config.yaml --ou-path /root/test1/lolo [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure organization-unit create --config <path> --ou-path <path> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure organization-unit create --config organization/.orgtool/root/config.yaml --ou-path /root/test1/lolo [--exec] [-q] [-d|-dd]
 
     OUs = flatten_OUs(org_spec, log)
     # check the OU doesn't exist yet
@@ -745,7 +745,7 @@ def organization_unit_create(args, log, org_spec):
 
 
 def organization_unit_delete(args, log, org_spec):
-    # awsconfigure organization-unit delete --config <path> --ou-path <path> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure organization-unit delete --config <path> --ou-path <path> [--exec] [-q] [-d|-dd]
 
     OUs = flatten_OUs(org_spec, log)
     # check the OU exists
@@ -774,8 +774,8 @@ def organization_unit_delete(args, log, org_spec):
 
 
 def organization_unit_scp_add(args, log, org_spec):
-    # awsconfigure organization-unit scp add --config <path> --ou-path <path> [--scp-name <name>...] [--exec] [-q] [-d|-dd]
-    # awsconfigure organization-unit scp add --config organization/.orgtool/root/config.yaml --ou-path /root/test1/test2 --scp-name toto --scp-name titi
+    # orgtoolconfigure organization-unit scp add --config <path> --ou-path <path> [--scp-name <name>...] [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure organization-unit scp add --config organization/.orgtool/root/config.yaml --ou-path /root/test1/test2 --scp-name toto --scp-name titi
     changed = False
     # search for the OU
     OUs = flatten_OUs(org_spec, log)
@@ -804,8 +804,8 @@ def organization_unit_scp_add(args, log, org_spec):
 
 
 def organization_unit_scp_remove(args, log, org_spec):
-    # awsconfigure organization-unit scp remove --config <path> --ou-path <path> [--scp-name <name>...] [--exec] [-q] [-d|-dd]
-    # awsconfigure organization-unit scp remove --config organization/.orgtool/root/config.yaml --ou-path /root/test1/test2 --scp-name toto --scp-name titi
+    # orgtoolconfigure organization-unit scp remove --config <path> --ou-path <path> [--scp-name <name>...] [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure organization-unit scp remove --config organization/.orgtool/root/config.yaml --ou-path /root/test1/test2 --scp-name toto --scp-name titi
     changed = False
     # search for the OU
     OUs = flatten_OUs(org_spec, log)
@@ -837,8 +837,8 @@ def organization_unit_scp_remove(args, log, org_spec):
 
 
 def validate(args, log):
-    # awsconfigure validate --config <path> --recursive
-    # awsconfigure validate --config organization/.orgtool/root/config.yaml
+    # orgtoolconfigure validate --config <path> --recursive
+    # orgtoolconfigure validate --config organization/.orgtool/root/config.yaml
     args['organization'] = True
     orgtool.orgs.core(args)
     log.debug(args)
@@ -860,7 +860,7 @@ def get_ou_list(args, log, org_spec):
 
 
 def organization_unit_tag_add(args, log, org_spec):
-    # awsconfigure organization-unit tag add --config <path> --ou-path <path> --tag <key>=<value> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure organization-unit tag add --config <path> --ou-path <path> --tag <key>=<value> [--exec] [-q] [-d|-dd]
 
     if len(args['--ou-path'].split()) != 1:
         log.error("Please, provide 1 single OU Path")
@@ -898,7 +898,7 @@ def organization_unit_tag_add(args, log, org_spec):
 
 
 def organization_unit_tag_remove(args, log, org_spec):
-    # awsconfigure organization-unit tag remove --config <path> --ou-path <path> --tag <key>=<value> [--exec] [-q] [-d|-dd]
+    # orgtoolconfigure organization-unit tag remove --config <path> --ou-path <path> --tag <key>=<value> [--exec] [-q] [-d|-dd]
 
     if len(args['--ou-path'].split()) != 1:
         log.error("Please, provide 1 single OU Path")
