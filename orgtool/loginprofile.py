@@ -2,19 +2,18 @@
 """Manage AWS IAM user login profile.
 
 Usage:
-  orgtoolloginprofile USER  [--config FILE]
-                            [--master-account-id ID]
-                            [--auth-account-id ID]
-                            [--org-access-role ROLE]
-                            [--report]
-                            [--new | --reset | --reenable]
-                            [--no-email]
-                            [--disable]
-                            [--disable-expired]
-                            [--opt-ttl HOURS]
-                            [--password PASSWORD]
-                            [-q] [-d|-dd]
-  custom_policiesloginprofile (--help|--version)
+    orgtoolloginprofile USER    [--config FILE]
+                                [--master-account-id ID]
+                                [--auth-account-id ID]
+                                [--org-access-role ROLE]
+                                [--report]
+                                [--new | --reset | --reenable]
+                                [--no-email]
+                                [--disable]
+                                [--disable-expired]
+                                [--opt-ttl HOURS]
+                                [--password PASSWORD]
+                                [-q] [-d|-dd]
 
 Options:
   USER                      Name of IAM user.
@@ -307,6 +306,10 @@ def handle_email(log, args, spec, aliases, deployed_accounts, user, passwd):
 
 def main():
     args = docopt(__doc__, version=orgtool.__version__)
+    core(args)
+
+
+def core(args):
     # HACK ALERT!
     # set '--exec' and 'report' args to make get_logger() happy
     args['--exec'] = True
@@ -319,6 +322,8 @@ def main():
     else:
         args['report'] = False
     log = get_logger(args)
+    log.debug(args)
+    log.info("Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     log.debug("%s: args:\n%s" % (__name__, args))
     args = load_config(log, args)
     spec = validate_spec(log, args)
