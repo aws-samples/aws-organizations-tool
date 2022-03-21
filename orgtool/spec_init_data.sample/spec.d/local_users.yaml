@@ -2,7 +2,7 @@
 # Local User Specification 
 #
 # IAM user resources can be deployed into managed accounts.  Local users 
-# are typically accociated with a service such as SES or S3.  Such users
+# are typically associated with a service such as SES or S3.  Such users
 # do not have a login profile.
 # 
 # Each local user spce has the following attributes:
@@ -14,7 +14,7 @@
 #                     Should match the ActiveDirectory 'mail' attribute.
 #   RequestId (str):  Ticketing system tracking number of a new user request.
 #
-#   Description (str):A decription applied to the local IAM user.
+#   Description (str):A description applied to the local IAM user.
 #   Service (str):    Name of the AWS service this user interacts with. This 
 #                     is used in the IAM resource path.
 #   Account (list(str), 'ALL'):
@@ -23,7 +23,7 @@
 #                     all accounts in the Organization.
 #   ExcludeAccounts (list(str)):
 #                     If 'TrustingAccount' attribute is set to 'ALL',
-#                     any accounts listed in 'ExludeAccounts' are
+#                     any accounts listed in 'ExcludeAccounts' are
 #                     excluded from the delegation.
 #   Policies (list(str)): 
 #                     List of IAM policies to attach to the local user.

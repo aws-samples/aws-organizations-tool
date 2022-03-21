@@ -14,7 +14,7 @@
 #                   Auth account become members.
 #  ExcludeMembers (list(str)):
 #                   If 'Members' attribute is set to 'ALL', any users 
-#                   listed in 'ExludeMembers' are excluded from the group.
+#                   listed in 'ExcludeMembers' are excluded from the group.
 #  Policies (list(str)):
 #                   List of IAM policies to attach to this group.
 

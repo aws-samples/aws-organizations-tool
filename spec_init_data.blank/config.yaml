@@ -1,6 +1,6 @@
 # orgtool Configuration Parameters
 
-# Path to yaml spec files directory.  Any yaml files under this dirctory
+# Path to yaml spec files directory.  Any yaml files under this directory
 # (recursive) are parsed as spec files.
 spec_dir: '--/spec.d'
 
