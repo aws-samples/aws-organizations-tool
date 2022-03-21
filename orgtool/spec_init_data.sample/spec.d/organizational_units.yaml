@@ -20,8 +20,8 @@
 #                   The Name of OU is equal to the name of the upper OU in the included configuration 
 #   MountingOUPath (string):
 #                   For an included configuration, this is the reference to the mounting point path into the OUs tree.
-#                   This exist only if the upper name of the tree is not "root". if not, raise an exception
-#                   The upper name of the tree is equal to the OU name of the mointing point
+#                   This exists only if the upper name of the tree is not "root". if not, raise an exception
+#                   The upper name of the tree is equal to the OU name of the mounting point
 #   PrefixRequired:
 #                   Only used with IncludeConfigPath.
 #                   Prefix value to use to validate naming convention for included SCP name

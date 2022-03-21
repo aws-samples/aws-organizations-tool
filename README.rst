@@ -10,7 +10,7 @@ This tool is a fork from aws-orgs, published by Ashley Gould <agould@ucop.edu> a
 Features
 --------
 
-- Ensure state of AWS Organizations and IAM resourses per `yaml`_ formatted specification files.
+- Ensure state of AWS Organizations and IAM resources per `yaml`_ formatted specification files.
 - Configure AWS Organizations resources:
 
   - organizational units
@@ -25,7 +25,7 @@ Features
 
 - New features:
 
-  - Nested configurations : Manage the organization description with a combinaison of includes of distributed sub organization configuration
+  - Nested configurations : Manage the organization description with a combination of includes of distributed sub organization configuration
   - CLI to manipulate and change the configuration files
   - Generate configuration from an existing organisation
   - Support of resource tagging OUs and accounts.  
@@ -71,10 +71,10 @@ See ``--help`` option for full usage.
 Console Scripts
 ---------------
 
-``orgtool`` provides the following python executibles:  
+``orgtool`` provides the following python executables:
 
 orgtool
-  Manage recources in an AWS Organization.
+  Manage resources in an AWS Organization.
 
 awsaccounts
   Manage accounts in an AWS Organization.
