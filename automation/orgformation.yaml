@@ -56,8 +56,8 @@ Resources:
             - logs:CreateLogStream
             - logs:PutLogEvents
           Resource:
-            - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}
-            - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}/*
+            - !Sub arn:aws:s3:::*
+            - !Sub arn:aws:s3:::*/*
 
 
   ################# Custom ressource management S3 BUcket
@@ -83,8 +83,8 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}
-                  - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}/*
+                  - !Sub arn:aws:s3:::*
+                  - !Sub arn:aws:s3:::*/*
                   
         - PolicyName: S3Policy
           PolicyDocument:
@@ -95,8 +95,8 @@ Resources:
                   - s3:List*
                   - s3:DeleteObject
                 Resource:
-                  - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}
-                  - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}/*
+                  - !Sub arn:aws:s3:::*
+                  - !Sub arn:aws:s3:::*/*
     
   EmptyS3BucketOnDeletionLambdaFunction:
     Metadata:
