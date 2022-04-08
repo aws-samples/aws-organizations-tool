@@ -17,17 +17,17 @@
 #                       Setting to 'absent' deletes delegation roles in
 #                       trusting accounts and removes assume role policies
 #                       from the trusted group.
-#   Description (str):  A decription applied to the IAM role.
+#   Description (str):  A description applied to the IAM role.
 #   Path (str):         Path prefix for the IAM user resource name. (optional)
 #                       If Path is not fully qualified (i.e. starts with '/'),
 #                       awsauth prepends the 'default_path' to Path.
 #   TrustingAccount (list(str), 'ALL'):
 #                       List of trusting accounts within the scope of the
 #                       delegation.  If set to 'ALL', all accounts in the
-#                       Organization are include in the delegation.
+#                       Organization are included in the delegation.
 #   ExcludeAccounts (list(str)):
 #                       If 'TrustingAccount' attribute is set to 'ALL',
-#                       any accounts listed in 'ExludeAccounts' are
+#                       any accounts listed in 'ExcludeAccounts' are
 #                       excluded from the delegation.
 #   TrustedGroup (str): The IAM group in the Auth account in which to assign
 #                       assume role policies for this delegation.
@@ -41,7 +41,7 @@
 #                       List of IAM policies to attach to the delegation role
 #                       in the trusting accounts.
 #   PolicySet (str):    Name of the policy set to attach to the delegation role
-#                       Incomplatible with "Policies".
+#                       Incompatible with "Policies".
 
 delegations:
 
