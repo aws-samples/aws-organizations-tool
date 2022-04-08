@@ -41,12 +41,13 @@ Resources:
     Properties: 
       Bucket: !Ref ArtifactsS3Bucket
       PolicyDocument:
-        Version: '2008-10-17'
+        Version: '2012-10-17'
         Statement:
         - 
           Sid: Allow
           Effect: Allow
-          Principal: !Ref AWS::AccountId
+          Principal: 
+            "AWS": !Sub "arn:aws:iam::${AWS::AccountId}:root" 
           Action:
             - s3:PutObject
             - s3:GetObject
@@ -56,8 +57,8 @@ Resources:
             - logs:CreateLogStream
             - logs:PutLogEvents
           Resource:
-            - !Sub arn:aws:s3:::*
-            - !Sub arn:aws:s3:::*/*
+            - arn:aws:s3:::*
+            - arn:aws:s3:::*/*
 
 
   ################# Custom ressource management S3 BUcket
