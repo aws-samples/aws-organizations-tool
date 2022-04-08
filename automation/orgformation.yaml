@@ -364,6 +364,19 @@ Resources:
             Resource:
               - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}/*
               - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
+          - 
+            Effect: Allow
+            Resource: "*"
+            Action:
+              - cloudformation:DescribeStacks
+              - cloudformation:CreateChangeSet
+              - cloudformation:CreateStack
+              - cloudformation:UpdateStack
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DeleteStack
+
+
+
 
 ################### Roles
 
