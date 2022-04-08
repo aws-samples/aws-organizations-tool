@@ -18,13 +18,129 @@ Parameters:
 Resources:
 
   ArtifactsS3Bucket:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W35
+            reason: "S3 Bucket logging configurration is not relevant in this usecase"
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True  
       BucketEncryption:
         ServerSideEncryptionConfiguration:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: AES256
+
+  ArtifactsS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: !Ref ArtifactsS3Bucket
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - 
+          Sid: Allow
+          Effect: Allow
+          Principal: !Ref AWS::AccountId
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:List*
+            - s3:DeleteObject
+            - s3:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource:
+            - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}
+            - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}/*
+
+
+  ################# Custom ressource management S3 BUcket
+  EmptyS3BucketOnDeletionLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: LoggingPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}
+                  - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}/*
+                  
+        - PolicyName: S3Policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:List*
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}
+                  - !Sub arn:aws:s3::${AWS::AccountId}:${ArtifactsS3Bucket}/*
+    
+  EmptyS3BucketOnDeletionLambdaFunction:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "Lambda functions deployed inside a VPC is not relevant for this use case"
+    Type: "AWS::Lambda::Function"
+    Properties:
+      ReservedConcurrentExecutions: 1
+      Code:
+        ZipFile: |
+          import cfnresponse
+          import boto3
+          def handler(event, context):
+              print(event)
+              print('boto version ' + boto3.__version__)
+              # Globals
+              responseData = {}
+              ResponseStatus = cfnresponse.SUCCESS
+              s3bucketName = event['ResourceProperties']['s3bucketName']
+              if event['RequestType'] == 'Create':
+                  responseData['Message'] = "Resource creation successful!"
+              elif event['RequestType'] == 'Update':
+                  responseData['Message'] = "Resource update successful!"
+              elif event['RequestType'] == 'Delete':
+                  # Need to empty the S3 bucket before it is deleted
+                  s3 = boto3.resource('s3')
+                  bucket = s3.Bucket(s3bucketName)
+                  bucket.objects.all().delete()
+                  responseData['Message'] = "Resource deletion successful!"
+              cfnresponse.send(event, context, ResponseStatus, responseData)
+      Handler: index.handler
+      Runtime: python3.7
+      Role: !GetAtt EmptyS3BucketOnDeletionLambdaExecutionRole.Arn
+
+  EmptyArtifactsS3BucketOnDeletionCustomResource:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !GetAtt EmptyS3BucketOnDeletionLambdaFunction.Arn
+      s3bucketName: !Ref ArtifactsS3Bucket
+
+  ################# Custom ressource management S3 BUcket
+
 
 
   OrganisationConfigurationCodeCommit:
@@ -42,6 +158,13 @@ Resources:
 
 ################### Roles
   OrgAccessRole:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Resource found with an explicit name, this disallows updates that require replacement of this resource is intented"
+          - id: W43
+            reason: "This roles is the AWS Organization for to assume admin role accross all organization account. this is an administrator role."
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Ref OrgAccessRoleName
@@ -61,6 +184,13 @@ Resources:
 
       
   OrgFormationCodePipelineRole:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "All policies are defined by service statemant and used at the master level to manage the whole AWS Organization"
+          - id: W28
+            reason: "Resource found with an explicit name, this disallows updates that require replacement of this resource is intented"
     Type: AWS::IAM::Role
     Properties:
       RoleName: orgformationcodepipelinerole
@@ -100,6 +230,13 @@ Resources:
 
 
   OrgFormationCodeBuildRole:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "All policies are defined by service statemant and used at the master level to manage the whole AWS Organization"
+          - id: W28
+            reason: "Resource found with an explicit name, this disallows updates that require replacement of this resource is intented"
     Type: AWS::IAM::Role
     Properties:
       RoleName: orgformationcodebuildrole
@@ -112,8 +249,6 @@ Resources:
           Action:
           - sts:AssumeRole
       Path: "/"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess ### to be removed
       Policies:  
       - PolicyName: orgformationcodebuildrole-policy
         PolicyDocument:
@@ -121,6 +256,7 @@ Resources:
           Statement:
           - 
             Effect: Allow
+            Resource: "*"
             Action:
               - codecommit:BatchGetRepositories
               - codecommit:Get*
@@ -128,23 +264,99 @@ Resources:
               - codecommit:List*
               - codecommit:CancelUploadArchive
               - codecommit:UploadArchive  
+          - 
+            Effect: Allow
+            Resource: "*"
+            Action:
               - codebuild:StartBuild
+          - 
+            Effect: Allow
+            Resource: "*"
+            Action:
               - logs:CreateLogGroup 
               - logs:CreateLogStream
               - logs:PutLogEvents
+          - 
+            Effect: Allow
+            Resource: "*"
+            Action:
               - iam:ListUsers
               - iam:ListGroups
               - iam:ListAccountAliases
               - iam:DeleteAccountAlias
               - iam:CreateAccountAlias
               - iam:GetRole
-              - organizations:*
+          - 
+            Effect: Allow
+            Resource: "*"
+            Action:
+              - organizations:AcceptHandshake
+              - organizations:AttachPolicy
+              - organizations:CancelHandshake
+              - organizations:CloseAccount
+              - organizations:CreateAccount
+              - organizations:CreateGovCloudAccount
+              - organizations:CreateOrganization
+              - organizations:CreateOrganizationalUnit
+              - organizations:CreatePolicy
+              - organizations:DeclineHandshake
+              - organizations:DeleteOrganization
+              - organizations:DeleteOrganizationalUnit
+              - organizations:DeletePolicy
+              - organizations:DeregisterDelegatedAdministrator
+              - organizations:DescribeAccount
+              - organizations:DescribeCreateAccountStatus
+              - organizations:DescribeEffectivePolicy
+              - organizations:DescribeHandshake
+              - organizations:DescribeOrganization
+              - organizations:DescribeOrganizationalUnit
+              - organizations:DescribePolicy
+              - organizations:DetachPolicy
+              - organizations:DisableAWSServiceAccess
+              - organizations:DisablePolicyType
+              - organizations:EnableAWSServiceAccess
+              - organizations:EnableAllFeatures
+              - organizations:EnablePolicyType
+              - organizations:InviteAccountToOrganization
+              - organizations:LeaveOrganization
+              - organizations:ListAWSServiceAccessForOrganization
+              - organizations:ListAccounts
+              - organizations:ListAccountsForParent
+              - organizations:root
+              - organizations:ListChildren
+              - organizations:ListCreateAccountStatus
+              - organizations:ListDelegatedAdministrators
+              - organizations:ListDelegatedServicesForAccount
+              - organizations:ListHandshakesForAccount
+              - organizations:ListHandshakesForOrganization
+              - organizations:ListOrganizationalUnitsForParent
+              - organizations:ListParents
+              - organizations:ListPolicies
+              - organizations:ListPoliciesForTarget
+              - organizations:ListRoots
+              - organizations:ListTagsForResource
+              - organizations:ListTargetsForPolicy
+              - organizations:MoveAccount
+              - organizations:RegisterDelegatedAdministrator
+              - organizations:RemoveAccountFromOrganization
+              - organizations:TagResource
+              - organizations:UntagResource
+              - organizations:UpdateOrganizationalUnit
+              - organizations:UpdatePolicy
+
+          - 
+            Effect: Allow
+            Resource: "*"
+            Action:
               - s3:GetObject
               - s3:ListBucket
+          - 
+            Effect: Allow
+            Resource: "*"
+            Action:
               - sts:AssumeRole
               - states:SendTaskSuccess
               - states:SendTaskFailure
-            Resource: "*"
           - 
             Effect: Allow
             Action:
@@ -159,6 +371,12 @@ Resources:
 ##################### Code Build Projects (Linux)
 
   OrgFormationCodeBuildProject:
+  
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W32
+            reason: "CodeBuild project with specified EncryptionKey value is not relevant in this use case"
     Type: AWS::CodeBuild::Project
     Properties:
       Name: orgformationcodebuildproject
@@ -297,72 +515,7 @@ Resources:
 ############# Pipeline
 
 
-################# Custom ressource management S3 BUcket
-  EmptyS3BucketOnDeletionLambdaExecutionRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action:
-              - "sts:AssumeRole"
-      Policies:
-        - PolicyName: LoggingPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: "*"
-        - PolicyName: S3Policy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:List*
-                  - s3:DeleteObject
-                Resource: "*"
-  EmptyS3BucketOnDeletionLambdaFunction:
-    Type: "AWS::Lambda::Function"
-    Properties:
-      Code:
-        ZipFile: |
-          import cfnresponse
-          import boto3
-          def handler(event, context):
-              print(event)
-              print('boto version ' + boto3.__version__)
-              # Globals
-              responseData = {}
-              ResponseStatus = cfnresponse.SUCCESS
-              s3bucketName = event['ResourceProperties']['s3bucketName']
-              if event['RequestType'] == 'Create':
-                  responseData['Message'] = "Resource creation successful!"
-              elif event['RequestType'] == 'Update':
-                  responseData['Message'] = "Resource update successful!"
-              elif event['RequestType'] == 'Delete':
-                  # Need to empty the S3 bucket before it is deleted
-                  s3 = boto3.resource('s3')
-                  bucket = s3.Bucket(s3bucketName)
-                  bucket.objects.all().delete()
-                  responseData['Message'] = "Resource deletion successful!"
-              cfnresponse.send(event, context, ResponseStatus, responseData)
-      Handler: index.handler
-      Runtime: python3.7
-      Role: !GetAtt EmptyS3BucketOnDeletionLambdaExecutionRole.Arn
-  EmptyArtifactsS3BucketOnDeletionCustomResource:
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !GetAtt EmptyS3BucketOnDeletionLambdaFunction.Arn
-      s3bucketName: !Ref ArtifactsS3Bucket
-################# Custom ressource management S3 BUcket
+
 
 Outputs:
   OutputStackName:
