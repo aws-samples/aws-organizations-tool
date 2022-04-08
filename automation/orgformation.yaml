@@ -436,6 +436,19 @@ Resources:
                   echo 'update PIP'
                   pip install --upgrade pip
                   
+                                    
+            pre_build:
+              commands:
+                - |
+
+                  echo "pre build ..."
+
+                - |
+
+                  echo "install org-tool"
+                  pip install -e ./
+                  orgtool --version
+                  orgtool --help
 
                 - |
 
@@ -445,18 +458,6 @@ Resources:
                       --template-file ./automation/orgformation.yaml \
                       --stack-name "orgformation" \
                       --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM \
-
-                - |
-
-                  echo "install org-tool"
-                  pip install -e ./
-                  orgtool --version
-                  orgtool --help
-                                    
-            pre_build:
-              commands:
-                - |
-                  echo "pre build ..."
 
                                    
             build:
