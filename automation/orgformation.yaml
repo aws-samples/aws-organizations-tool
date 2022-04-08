@@ -374,6 +374,7 @@ Resources:
               - cloudformation:UpdateStack
               - cloudformation:DeleteChangeSet
               - cloudformation:DeleteStack
+              - cloudformation:GetTemplateSummary
 
 
 
