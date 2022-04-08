@@ -23,6 +23,8 @@ Resources:
         rules_to_suppress:
           - id: W35
             reason: "S3 Bucket logging configurration is not relevant in this usecase"
+          - id: W51
+            reason: "S3 bucket policy not relevant for this usecase"
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
@@ -36,29 +38,6 @@ Resources:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: AES256
 
-  ArtifactsS3BucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties: 
-      Bucket: !Ref ArtifactsS3Bucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - 
-          Sid: Allow
-          Effect: Allow
-          Principal: 
-            "AWS": !Sub "arn:aws:iam::${AWS::AccountId}:root" 
-          Action:
-            - s3:PutObject
-            - s3:GetObject
-            - s3:List*
-            - s3:DeleteObject
-            - s3:CreateLogGroup
-            - logs:CreateLogStream
-            - logs:PutLogEvents
-          Resource:
-            - arn:aws:s3:::*
-            - arn:aws:s3:::*/*
 
 
   ################# Custom ressource management S3 BUcket
@@ -261,7 +240,8 @@ Resources:
             Action:
               - codecommit:BatchGetRepositories
               - codecommit:Get*
-              - codecommit:GitPull
+              # - codecommit:GitPull
+              - codecommit:Git*
               - codecommit:List*
               - codecommit:CancelUploadArchive
               - codecommit:UploadArchive  
