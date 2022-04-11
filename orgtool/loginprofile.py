@@ -128,7 +128,7 @@ def list_delegations(log, user, deployed_accounts):
 def format_delegation_table(delegation_arns, deployed_accounts):
     """Generate formatted list of delegation attributes as printable string"""
     template = "  {}    {}{}{}\n"
-    delegation_string = template.format('Account Id  ', 'Alias', ' '*19, 'Role')
+    delegation_string = template.format('Account Id  ', 'Alias', ' ' * 19, 'Role')
     for assume_role_arn in delegation_arns:
         account_id = assume_role_arn.split(':')[4]
         alias = lookup(deployed_accounts, 'Id', account_id, 'Alias')
@@ -313,11 +313,7 @@ def core(args):
     # HACK ALERT!
     # set '--exec' and 'report' args to make get_logger() happy
     args['--exec'] = True
-    if not (args['--new']
-            or args['--reset']
-            or args['--disable']
-            or args['--disable-expired']
-            or args['--reenable']):
+    if not (args['--new'] or args['--reset'] or args['--disable'] or args['--disable-expired'] or args['--reenable']):
         args['report'] = True
     else:
         args['report'] = False
@@ -335,8 +331,9 @@ def core(args):
     login_profile = validate_login_profile(user)
     passwd, require_reset = munge_passwd(args['--password'])
     org_credentials = get_assume_role_credentials(
-            args['--master-account-id'],
-            args['--org-access-role'])
+        args['--master-account-id'],
+        args['--org-access-role']
+    )
     if isinstance(org_credentials, RuntimeError):
         log.critical(org_credentials)
         sys.exit(1)
