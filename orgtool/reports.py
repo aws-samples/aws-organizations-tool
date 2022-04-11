@@ -43,10 +43,10 @@ def report_maker(log, accounts, role, query_func, report_header=None, **qf_args)
     # gather report data from accounts
     report = {}
     queue_threads(
-            log, accounts,
-            make_account_report,
-            f_args=(report, role),
-            thread_count=10)
+        log, accounts,
+        make_account_report,
+        f_args=(report, role),
+        thread_count=10)
     # process the reports
     if report_header:
         log.info("\n\n%s" % overbar(report_header))
@@ -186,9 +186,9 @@ def account_authorization_report(credentials, verbose=False):
 
     user_info = []
     users = get_iam_objects(
-            iam_client.get_account_authorization_details,
-            'UserDetailList',
-            dict(Filter=['User']))
+        iam_client.get_account_authorization_details,
+        'UserDetailList',
+        dict(Filter=['User']))
     for u in users:
         if verbose:
             user_info.append(u)
@@ -199,9 +199,9 @@ def account_authorization_report(credentials, verbose=False):
 
     group_info = []
     groups = get_iam_objects(
-            iam_client.get_account_authorization_details,
-            'GroupDetailList',
-            dict(Filter=['Group']))
+        iam_client.get_account_authorization_details,
+        'GroupDetailList',
+        dict(Filter=['Group']))
     for u in groups:
         if verbose:
             group_info.append(u)
@@ -212,9 +212,9 @@ def account_authorization_report(credentials, verbose=False):
 
     role_info = []
     roles = get_iam_objects(
-            iam_client.get_account_authorization_details,
-            'RoleDetailList',
-            dict(Filter=['Role']))
+        iam_client.get_account_authorization_details,
+        'RoleDetailList',
+        dict(Filter=['Role']))
     for u in roles:
         if verbose:
             role_info.append(u)
@@ -225,9 +225,9 @@ def account_authorization_report(credentials, verbose=False):
 
     policy_info = []
     policies = get_iam_objects(
-            iam_client.get_account_authorization_details,
-            'Policies',
-            dict(Filter=['LocalManagedPolicy']))
+        iam_client.get_account_authorization_details,
+        'Policies',
+        dict(Filter=['LocalManagedPolicy']))
     for u in policies:
         if verbose:
             policy_info.append(u)
@@ -339,8 +339,8 @@ def display_roles_in_accounts(log, args, deployed, auth_spec):
         messages.append('\n%s' % overbar)
         messages.append("Account:\t%s" % account['Name'])
         credentials = get_assume_role_credentials(
-                account['Id'],
-                args['--org-access-role'])
+            account['Id'],
+            args['--org-access-role'])
         if isinstance(credentials, RuntimeError):
             messages.append(credentials)
         else:

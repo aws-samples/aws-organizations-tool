@@ -180,12 +180,12 @@ def create_users(credentials, args, log, deployed, auth_spec):
     iam_resource = boto3.resource('iam', **credentials)
     for u_spec in auth_spec['users']:
         tags = [
-            {'Key': 'cn',  'Value': u_spec['CN']},
+            {'Key': 'cn', 'Value': u_spec['CN']},
             {'Key': 'email', 'Value': u_spec['Email']}
         ]
         # RequestId is not required
         if 'RequestId' in u_spec and u_spec['RequestId']:
-            tags += [{'Key': 'request_id',  'Value': u_spec['RequestId']}]
+            tags += [{'Key': 'request_id', 'Value': u_spec['RequestId']}]
 
         path = orgtool.utils.munge_path(auth_spec['default_path'], u_spec)
         deployed_user = orgtool.utils.lookup(deployed['users'], 'UserName', u_spec['Name'])
@@ -252,8 +252,7 @@ def create_groups(credentials, args, log, deployed, auth_spec):
         elif not orgtool.utils.ensure_absent(g_spec):
             log.info("Creating group '%s'" % g_spec['Name'])
             if args['--exec']:
-                response = iam_client.create_group(
-                        GroupName=g_spec['Name'], Path=path)
+                response = iam_client.create_group(GroupName=g_spec['Name'], Path=path)
                 log.info(response['Group']['Arn'])
                 deployed['groups'].append(response['Group'])
 
@@ -311,8 +310,7 @@ def manage_group_policies(credentials, args, log, deployed, auth_spec):
     auth_account = orgtool.utils.lookup(deployed['accounts'], 'Id', auth_spec['auth_account_id'], 'Name')
     log.debug("auth account: '%s'" % auth_account)
     for g_spec in auth_spec['groups']:
-        if (orgtool.utils.lookup(deployed['groups'], 'GroupName', g_spec['Name'])
-                and not orgtool.utils.ensure_absent(g_spec)):
+        if (orgtool.utils.lookup(deployed['groups'], 'GroupName', g_spec['Name']) and not orgtool.utils.ensure_absent(g_spec)):
             log.debug("processing group spec for '%s':\n%s" % (g_spec['Name'], g_spec))
             group = iam_resource.Group(g_spec['Name'])
             attached_policies = [p.policy_name for p in list(group.attached_policies.all())]
@@ -365,11 +363,8 @@ def manage_custom_policy(iam_client, account_name, policy_name, args, log, auth_
     policy_doc = dict(Version='2012-10-17', Statement=p_spec['Statement'])
 
     # check if custom policy exists
-    custom_policies = orgtool.utils.get_iam_objects(
-            iam_client.list_policies, 'Policies', dict(Scope='Local'))
-    log.debug("account: '%s', custom policies: '%s'" % (
-            account_name,
-            [p['Arn'] for p in custom_policies]))
+    custom_policies = orgtool.utils.get_iam_objects(iam_client.list_policies, 'Policies', dict(Scope='Local'))
+    log.debug("account: '%s', custom policies: '%s'" % (account_name, [p['Arn'] for p in custom_policies]))
     policy = orgtool.utils.lookup(custom_policies, 'PolicyName', policy_name)
     if not policy:
         log.info("Creating custom policy '%s' in account '%s':\n%s" % (policy_name, account_name, yamlfmt(policy_doc)))
@@ -384,10 +379,7 @@ def manage_custom_policy(iam_client, account_name, policy_name, args, log, auth_
 
     # check if custom policy needs updating
     else:
-        current_doc = iam_client.get_policy_version(
-                PolicyArn=policy['Arn'],
-                VersionId=policy['DefaultVersionId']
-                )['PolicyVersion']['Document']
+        current_doc = iam_client.get_policy_version(PolicyArn=policy['Arn'], VersionId=policy['DefaultVersionId'])['PolicyVersion']['Document']
         log.debug("account: '%s', policy_doc: %s" % (account_name, policy_doc))
         log.debug("account: '%s', current_doc: %s" % (account_name, current_doc))
 
@@ -399,23 +391,15 @@ def manage_custom_policy(iam_client, account_name, policy_name, args, log, auth_
 
         # update policy and set as default version
         if update_required:
-            log.info("Updating custom policy '%s' in account '%s':\n%s" % (
-                    policy_name,
-                    account_name,
-                    string_differ(yamlfmt(current_doc), yamlfmt(policy_doc))))
+            log.info("Updating custom policy '%s' in account '%s':\n%s" % (policy_name, account_name, string_differ(yamlfmt(current_doc), yamlfmt(policy_doc))))
             if args['--exec']:
                 log.debug("check for non-default policy versions for '%s'" % policy_name)
                 for v in iam_client.list_policy_versions(
                         PolicyArn=policy['Arn'])['Versions']:
                     if not v['IsDefaultVersion']:
                         log.info("Deleting non-default policy version '%s' for policy '%s' in account '%s'" % (v['VersionId'], policy_name, account_name))
-                        iam_client.delete_policy_version(
-                                PolicyArn=policy['Arn'],
-                                VersionId=v['VersionId'])
-                iam_client.create_policy_version(
-                        PolicyArn=policy['Arn'],
-                        PolicyDocument=json.dumps(policy_doc),
-                        SetAsDefault=True)
+                        iam_client.delete_policy_version(PolicyArn=policy['Arn'], VersionId=v['VersionId'])
+                iam_client.create_policy_version(PolicyArn=policy['Arn'], PolicyDocument=json.dumps(policy_doc), SetAsDefault=True)
         return policy['Arn']
 
 
@@ -573,8 +557,7 @@ def set_group_assume_role_policies(args, log, deployed, auth_spec, d_spec):
         delete_obsolete_group_policy(args, log, group, auth_account, policy_name, managed_policies)
 
 
-def manage_local_user_in_accounts(
-            account, args, log, auth_spec, deployed, accounts, lu_spec):
+def manage_local_user_in_accounts(account, args, log, auth_spec, deployed, accounts, lu_spec):
     """
     Create and manage a local user in an account per user specification.
     """
@@ -588,7 +571,7 @@ def manage_local_user_in_accounts(
 
     # RequestId is not required
     if 'RequestId' in lu_spec and lu_spec['RequestId']:
-        tags += [{'Key': 'request_id',  'Value': lu_spec['RequestId']}]
+        tags += [{'Key': 'request_id', 'Value': lu_spec['RequestId']}]
 
     path_spec = "/{}/service/{}/".format(auth_spec['default_path'], lu_spec['Service'])
     credentials = get_assume_role_credentials(account['Id'], args['--org-access-role'])
@@ -610,10 +593,7 @@ def manage_local_user_in_accounts(
     # check for unmanaged user in account
     if user_exists:
         if not user.path.startswith('/' + auth_spec['default_path']):
-            log.error(
-                    "Can not manage local user '%s' in account '%s'. "
-                    " Unmanaged user with the same name already exists: %s" %
-                    (user.name, account_name, user.arn))
+            log.error("Can not manage local user '%s' in account '%s'. Unmanaged user with the same name already exists: %s" % (user.name, account_name, user.arn))
             return
 
     # check if local user should not exist
@@ -704,12 +684,10 @@ def get_policies_from_spec(log, auth_spec, d_spec):
     """
     if 'Policies' in d_spec:
         return d_spec.get('Policies')
-    log.debug("Using PolicySet {} for role {}".format(
-            d_spec['PolicySet'], d_spec['RoleName']))
+    log.debug("Using PolicySet {} for role {}".format(d_spec['PolicySet'], d_spec['RoleName']))
     policy_set = orgtool.utils.lookup(auth_spec['policy_sets'], 'Name', d_spec['PolicySet'])
     if policy_set is None:
-        log.error("policy set '{}' not found for role '{}'".format(
-                d_spec['PolicySet'], d_spec['RoleName']))
+        log.error("policy set '{}' not found for role '{}'".format(d_spec['PolicySet'], d_spec['RoleName']))
         return list()
     else:
         return policy_set['Policies']
@@ -725,22 +703,14 @@ def update_role_tags(args, log, iam_client, account_name, role, tags):
     '''
     Compare existing role tags to what is in spec and adjust as needed
     '''
-    log.debug("role: '{}', account: '{}', role tags: {}; spec tags: {}".format(
-            role.name, account_name, role.tags, tags))
+    log.debug("role: '{}', account: '{}', role tags: {}; spec tags: {}".format(role.name, account_name, role.tags, tags))
     if tags is not None and role.tags != tags:
-        log.info("Updating tags in role '{}' in account '{}'".format(
-                role.name, account_name))
+        log.info("Updating tags in role '{}' in account '{}'".format(role.name, account_name))
         if args['--exec']:
             if role.tags is not None:
-                iam_client.untag_role(
-                    RoleName=role.role_name,
-                    TagKeys=[tag['Key'] for tag in role.tags],
-                )
+                iam_client.untag_role(RoleName=role.role_name, TagKeys=[tag['Key'] for tag in role.tags])
             if tags is not None:
-                iam_client.tag_role(
-                    RoleName=role.role_name,
-                    Tags=tags,
-                )
+                iam_client.tag_role(RoleName=role.role_name, Tags=tags)
 
 
 def create_role(args, log, role, iam_client, d_spec, account_name, path_spec, tags, policy_doc):
@@ -786,13 +756,13 @@ def update_role_policy_document(args, log, role, iam_client, account_name, polic
             account_name,
             string_differ(
                 yamlfmt(role.assume_role_policy_document),
-                yamlfmt(policy_doc),
-            ),
+                yamlfmt(policy_doc)
+            )
         ))
         if args['--exec']:
             iam_client.update_assume_role_policy(
                 RoleName=role.role_name,
-                PolicyDocument=json.dumps(policy_doc),
+                PolicyDocument=json.dumps(policy_doc)
             )
 
 
@@ -800,12 +770,12 @@ def update_role_description(args, log, role, iam_client, account_name, role_desc
     if role.description != role_description:
         log.info("Updating description in role '{}' in account '{}'".format(
             role.role_name,
-            account_name,
+            account_name
         ))
         if args['--exec']:
             iam_client.update_role_description(
                 RoleName=role.role_name,
-                Description=role_description,
+                Description=role_description
             )
 
 
@@ -813,12 +783,12 @@ def update_role_duration(args, log, role, iam_client, account_name, role_duratio
     if role.max_session_duration != role_duration:
         log.info("Updating max session duration in role '{}' in account '{}'".format(
             role.role_name,
-            account_name,
+            account_name
         ))
         if args['--exec']:
             iam_client.update_role(
                 RoleName=role.role_name,
-                MaxSessionDuration=role_duration,
+                MaxSessionDuration=role_duration
             )
 
 
@@ -833,7 +803,7 @@ def manage_attached_role_policies(args, log, role, iam_client, policy_list, acco
             log.info("Attaching policy '{}' to role '{}' in account '{}'".format(
                 policy_name,
                 role.name,
-                account_name,
+                account_name
             ))
             if args['--exec'] and policy_arn:
                 role.attach_policy(PolicyArn=policy_arn)
@@ -846,7 +816,7 @@ def manage_attached_role_policies(args, log, role, iam_client, policy_list, acco
             log.info("Detaching policy '{}' from role '{}' in account '{}'".format(
                 policy_name,
                 role.name,
-                account_name,
+                account_name
             ))
             if args['--exec'] and policy_arn:
                 role.detach_policy(PolicyArn=policy_arn)
@@ -858,16 +828,12 @@ def get_assume_role_policy_document(d_spec, deployed, auth_spec):
     else:
         trusted_account = auth_spec['auth_account_id']
     principal = "arn:aws:iam::%s:root" % trusted_account
-    statement = dict(
-            Effect='Allow',
-            Principal=dict(AWS=principal),
-            Action='sts:AssumeRole')
+    statement = dict(Effect='Allow', Principal=dict(AWS=principal), Action='sts:AssumeRole')
     mfa = True
     if 'RequireMFA' in d_spec and d_spec['RequireMFA'] is False:
         mfa = False
     if mfa:
-        statement['Condition'] = {
-                'Bool': {'aws:MultiFactorAuthPresent': 'true'}}
+        statement['Condition'] = {'Bool': {'aws:MultiFactorAuthPresent': 'true'}}
     return dict(Version='2012-10-17', Statement=[statement])
 
 
@@ -888,9 +854,7 @@ def manage_delegation_role(account, args, log, auth_spec, deployed, trusting_acc
     if 'Duration' not in d_spec:
         d_spec['Duration'] = 3600
     policy_doc = get_assume_role_policy_document(d_spec, deployed, auth_spec)
-    credentials = get_assume_role_credentials(
-            account['Id'],
-            args['--org-access-role'])
+    credentials = get_assume_role_credentials(account['Id'], args['--org-access-role'])
     if isinstance(credentials, RuntimeError):
         log.error(credentials)
         return
@@ -973,18 +937,14 @@ def core(args):
     args = load_config(log, args)
     auth_spec = validate_spec(log, args)
 
-    org_credentials = get_assume_role_credentials(
-            args['--master-account-id'],
-            args['--org-access-role'])
+    org_credentials = get_assume_role_credentials(args['--master-account-id'], args['--org-access-role'])
     if isinstance(org_credentials, RuntimeError):
         log.critical(org_credentials)
         sys.exit(1)
     org_client = boto3.client('organizations', **org_credentials)
     validate_master_id(org_client, auth_spec)
 
-    auth_credentials = get_assume_role_credentials(
-            args['--auth-account-id'],
-            args['--org-access-role'])
+    auth_credentials = get_assume_role_credentials(args['--auth-account-id'], args['--org-access-role'])
     if isinstance(auth_credentials, RuntimeError):
         log.critical(auth_credentials)
         sys.exit(1)
@@ -994,9 +954,10 @@ def core(args):
     validate_accounts_unique_in_org_deployed(log, deployed_accounts)
 
     deployed = dict(
-            users=orgtool.utils.get_iam_objects(iam_client.list_users, 'Users'),
-            groups=orgtool.utils.get_iam_objects(iam_client.list_groups, 'Groups'),
-            accounts=[a for a in deployed_accounts if a['Status'] == 'ACTIVE'])
+        users=orgtool.utils.get_iam_objects(iam_client.list_users, 'Users'),
+        groups=orgtool.utils.get_iam_objects(iam_client.list_groups, 'Groups'),
+        accounts=[a for a in deployed_accounts if a['Status'] == 'ACTIVE']
+    )
 
     if args['report']:
         if args['--account']:

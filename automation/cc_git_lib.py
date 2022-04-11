@@ -41,15 +41,15 @@ def commit(client, repositoryName, input_folder, authorName, email, commitMessag
         logger.info("Delete following files: " + str(delete_files))
         try:
             response = client.create_commit(
-                    repositoryName=repositoryName,
-                    branchName=branchName,
-                    parentCommitId=parentCommitId,
-                    authorName=authorName,
-                    email=email,
-                    commitMessage=commitMessage,
-                    putFiles=put_files,
-                    deleteFiles=delete_files
-                )
+                repositoryName=repositoryName,
+                branchName=branchName,
+                parentCommitId=parentCommitId,
+                authorName=authorName,
+                email=email,
+                commitMessage=commitMessage,
+                putFiles=put_files,
+                deleteFiles=delete_files
+            )
             logger.info("create_commit response is %s" % response)
         except client.exceptions.NoChangeException as e:
             print("No changes discovered. No commit performed.")
@@ -141,5 +141,5 @@ def _list_local_files(folder, subdirectories):
         for file_name in item[-1]:
             abs_item = os.path.join(item[0], file_name)
             with open(abs_item, "rb") as f:
-                put_files.append({"filePath": abs_item[len(folder)+1::], "fileContent": f.read()})
+                put_files.append({"filePath": abs_item[len(folder) + 1::], "fileContent": f.read()})
     return put_files

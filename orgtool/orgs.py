@@ -281,9 +281,9 @@ def display_provisioned_policies(org_client, log, deployed):
         log.info("Id:\t%s" % policy['Id'])
         log.info("Content:")
         log.info(json.dumps(json.loads(org_client.describe_policy(
-                PolicyId=policy['Id'])['Policy']['Content']),
-                indent=2,
-                separators=(',', ': ')))
+            PolicyId=policy['Id'])['Policy']['Content']),
+            indent=2,
+            separators=(',', ': ')))
 
 
 def display_provisioned_ou(org_client, log, deployed_ou, parent_path, indent=0):
@@ -297,18 +297,18 @@ def display_provisioned_ou(org_client, log, deployed_ou, parent_path, indent=0):
     child_accounts = lookup(deployed_ou, 'Path', parent_path, 'Accounts')
     # display parent ou name
     tab = '  '
-    log.info(tab*indent + ou['Name'] + ' (' + ou['Path'] + '):')
+    log.info(tab * indent + ou['Name'] + ' (' + ou['Path'] + '):')
     # look for policies
     policy_names = list_policies_in_ou(org_client, parent_id)
     if len(policy_names) > 0:
-        log.info(tab*indent + tab + 'Policies: ' + ', '.join(policy_names))
+        log.info(tab * indent + tab + 'Policies: ' + ', '.join(policy_names))
     # look for accounts
     account_list = sorted(child_accounts)
     if len(account_list) > 0:
-        log.info(tab*indent + tab + 'Accounts: ' + ', '.join(account_list))
+        log.info(tab * indent + tab + 'Accounts: ' + ', '.join(account_list))
     # look for child OUs
     if child_ou_list:
-        log.info(tab*indent + tab + 'Child_OU:')
+        log.info(tab * indent + tab + 'Child_OU:')
         indent += 2
         for ou_Name in child_ou_list:
             ou_path = parent_path + '/' + ou_Name
@@ -333,9 +333,9 @@ def manage_account_moves(org_client, args, log, deployed, ou_spec, dest_parent_i
                     log.info("Moving account '%s' to OU '%s'" % (account, ou_spec_path))
                     if args['--exec']:
                         org_client.move_account(
-                                AccountId=account_id,
-                                SourceParentId=source_parent_id,
-                                DestinationParentId=dest_parent_id)
+                            AccountId=account_id,
+                            SourceParentId=source_parent_id,
+                            DestinationParentId=dest_parent_id)
                     # update deployed structure
                     dest = False
                     source = False
@@ -369,9 +369,9 @@ def place_unmanged_accounts(org_client, args, log, deployed, account_list, dest_
             log.info("Moving unmanged account '%s' to default OU '%s'" % (account, dest_parent))
             if args['--exec']:
                 org_client.move_account(
-                        AccountId=account_id,
-                        SourceParentId=source_parent_id,
-                        DestinationParentId=dest_parent_id)
+                    AccountId=account_id,
+                    SourceParentId=source_parent_id,
+                    DestinationParentId=dest_parent_id)
 
 
 def manage_policies(org_client, args, log, deployed, org_spec, withdelete=True):
@@ -406,10 +406,10 @@ def manage_policies(org_client, args, log, deployed, org_spec, withdelete=True):
             log.info("Creating policy '%s'" % policy_name)
             if args['--exec']:
                 response = org_client.create_policy(
-                        Content=policy_doc,
-                        Description=p_spec['Description'],
-                        Name=p_spec['PolicyName'],
-                        Type='SERVICE_CONTROL_POLICY')
+                    Content=policy_doc,
+                    Description=p_spec['Description'],
+                    Name=p_spec['PolicyName'],
+                    Type='SERVICE_CONTROL_POLICY')
                 log.info("Creating policy '{}' response: {}".format(policy_name, response))
         # check for policy updates
         else:
@@ -419,9 +419,9 @@ def manage_policies(org_client, args, log, deployed, org_spec, withdelete=True):
                 log.info("Updating policy '%s'" % policy_name)
                 if args['--exec']:
                     response = org_client.update_policy(
-                            PolicyId=policy['Id'],
-                            Content=policy_doc,
-                            Description=p_spec['Description'])
+                        PolicyId=policy['Id'],
+                        Content=policy_doc,
+                        Description=p_spec['Description'])
                     log.info("Update policy '{}' response: {}".format(policy_name, response))
 
 
@@ -460,16 +460,16 @@ def manage_policy_attachments(org_client, args, log, deployed, org_spec, ou_spec
             # log.info("Attaching policy '%s' to OU '%s'" % (policy_name, ou_spec['Name']))
             if args['--exec']:
                 org_client.attach_policy(
-                        PolicyId=lookup(deployed['policies'], 'Name', policy_name, 'Id'),
-                        TargetId=ou_id)
+                    PolicyId=lookup(deployed['policies'], 'Name', policy_name, 'Id'),
+                    TargetId=ou_id)
     # detach policies
     for policy_name in policies_to_detach:
         log.info("Detaching policy '%s' from OU '%s'" % (policy_name, ou_spec_path))
         # log.info("Detaching policy '%s' from OU '%s'" % (policy_name, ou_spec['Name']))
         if args['--exec']:
             org_client.detach_policy(
-                    PolicyId=lookup(deployed['policies'], 'Name', policy_name, 'Id'),
-                    TargetId=ou_id)
+                PolicyId=lookup(deployed['policies'], 'Name', policy_name, 'Id'),
+                TargetId=ou_id)
 
 
 def manage_ou(org_client, args, log, deployed, org_spec, ou_spec_list, parent_name, parent_path):
@@ -606,14 +606,14 @@ def manage_ou(org_client, args, log, deployed, org_spec, ou_spec_list, parent_na
 
             if ('Child_OU' in ou_spec and isinstance(new_ou, dict) and 'Id' in new_ou):
                 manage_ou(
-                        org_client,
-                        args,
-                        log,
-                        deployed,
-                        org_spec,
-                        ou_spec['Child_OU'],
-                        name,
-                        ou_spec['Path'])
+                    org_client,
+                    args,
+                    log,
+                    deployed,
+                    org_spec,
+                    ou_spec['Child_OU'],
+                    name,
+                    ou_spec['Path'])
 
 
 def transform_tag_spec_into_list_of_dict(tag_spec):
@@ -632,10 +632,7 @@ def sorted_tags(tag_list):
 
 def update_ou_tags(org_client, ou, ou_tags, tag_spec, log):
     tagkeys = [tag['Key'] for tag in ou_tags]
-    org_client.untag_resource(
-       ResourceId=ou['Id'],
-       TagKeys=tagkeys,
-    )
+    org_client.untag_resource(ResourceId=ou['Id'], TagKeys=tagkeys)
     if len(tag_spec) == 0:
         log.debug('No tags specified for OU ' + ou['Name'])
     else:
@@ -751,10 +748,10 @@ def core(args):
         # validate_accounts_unique_in_org_spec(log, root_spec)
 
         managed = dict(
-                accounts=search_spec(root_spec, 'Accounts', 'Child_OU'),
-                # ou = search_spec(root_spec, 'Name', 'Child_OU'),
-                ou=flatten_OUs(org_spec, log),
-                policies=[p['PolicyName'] for p in org_spec['sc_policies']])
+            accounts=search_spec(root_spec, 'Accounts', 'Child_OU'),
+            # ou = search_spec(root_spec, 'Name', 'Child_OU'),
+            ou=flatten_OUs(org_spec, log),
+            policies=[p['PolicyName'] for p in org_spec['sc_policies']])
 
         # ensure default_sc_policy is considered 'managed'
         if org_spec['default_sc_policy'] not in managed['policies']:
@@ -793,7 +790,7 @@ def core(args):
                     log.warn("Unmanaged %s in Organization: %s" % (key, ', '.join(unmanaged_path)))
                     # too protect for infinity while loop
                     protection = 0
-                    protection_max = len(deployed['ou'])*5
+                    protection_max = len(deployed['ou']) * 5
 
                     while len(unmanaged) != 0:
                         protection += 1

@@ -75,9 +75,10 @@ def create_accounts(org_client, args, log, deployed_accounts, account_spec):
             log.debug('account email: %s' % email_addr)
             if args['--exec']:
                 new_account = org_client.create_account(
-                        AccountName=a_spec['Name'],
-                        Email=email_addr,
-                        RoleName=args['--org-access-role'])
+                    AccountName=a_spec['Name'],
+                    Email=email_addr,
+                    RoleName=args['--org-access-role']
+                )
                 create_id = new_account['CreateAccountStatus']['Id']
                 log.info("CreateAccountStatus Id: %s" % (create_id))
                 # validate creation status
@@ -85,8 +86,8 @@ def create_accounts(org_client, args, log, deployed_accounts, account_spec):
                 maxtries = 5
                 while counter < maxtries:
                     creation = org_client.describe_create_account_status(
-                            CreateAccountRequestId=create_id
-                            )['CreateAccountStatus']
+                        CreateAccountRequestId=create_id
+                    )['CreateAccountStatus']
                     if creation['State'] == 'IN_PROGRESS':
                         time.sleep(5)
                         log.info("Account creation in progress for '%s'" % a_spec['Name'])
@@ -180,7 +181,7 @@ def set_account_alias(account, log, args, account_spec, role):
     # if proposed_alias is None:
     #      proposed_alias = account['Name'].strip().lower().replace(" ", "-")
     credentials = get_assume_role_credentials(
-            account['Id'], args['--org-access-role'])
+        account['Id'], args['--org-access-role'])
     if isinstance(credentials, RuntimeError):
         log.error(credentials)
         return
@@ -215,12 +216,12 @@ def set_account_alias(account, log, args, account_spec, role):
 def scan_invited_accounts(log, org_client):
     """Return a list of handshake IDs"""
     response = org_client.list_handshakes_for_organization(
-            Filter={'ActionType': 'INVITE'})
+        Filter={'ActionType': 'INVITE'})
     handshakes = response['Handshakes']
     while 'NextToken' in response:
         response = org_client.list_handshakes_for_organization(
-                Filter={'ActionType': 'INVITE'},
-                NextToken=response['NextToken'])
+            Filter={'ActionType': 'INVITE'},
+            NextToken=response['NextToken'])
         handshakes += response['Handshakes']
     log.debug(handshakes)
     return handshakes
@@ -248,8 +249,7 @@ def invite_account(log, args, org_client, deployed_accounts):
             log.error('Account %s has already accepted a previous invite' % account_id)
             return
         if invite_state in ['REQUESTED', 'OPEN']:
-            log.error('Account %s has already been invited to Org and status is %s' % (
-                    account_id, invite_state))
+            log.error('Account %s has already been invited to Org and status is %s' % (account_id, invite_state))
             return
     log.info("inviting account %s to join Org" % account_id)
     if args['--exec']:
@@ -292,10 +292,10 @@ def display_provisioned_accounts(log, deployed_accounts, status):
         for name in sorted_account_names:
             account = lookup(deployed_accounts, 'Name', name)
             log.info(fmt_str.format(
-                    name,
-                    account['Alias'],
-                    account['Id'],
-                    account['Email']))
+                name,
+                account['Alias'],
+                account['Id'],
+                account['Email']))
 
 
 def unmanaged_accounts(log, deployed_accounts, account_spec):
@@ -340,8 +340,8 @@ def core(args):
     log.info("Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     args = load_config(log, args)
     credentials = get_assume_role_credentials(
-            args['--master-account-id'],
-            args['--org-access-role'])
+        args['--master-account-id'],
+        args['--org-access-role'])
     if isinstance(credentials, RuntimeError):
         log.critical(credentials)
         sys.exit(1)

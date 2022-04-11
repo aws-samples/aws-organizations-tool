@@ -63,8 +63,8 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Sub arn:aws:s3:::*
-                  - !Sub arn:aws:s3:::*/*
+                  - arn:aws:s3:::*
+                  - arn:aws:s3:::*/*
                   
         - PolicyName: S3Policy
           PolicyDocument:
@@ -75,8 +75,8 @@ Resources:
                   - s3:List*
                   - s3:DeleteObject
                 Resource:
-                  - !Sub arn:aws:s3:::*
-                  - !Sub arn:aws:s3:::*/*
+                  - arn:aws:s3:::*
+                  - arn:aws:s3:::*/*
     
   EmptyS3BucketOnDeletionLambdaFunction:
     Metadata:
