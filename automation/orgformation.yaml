@@ -453,7 +453,7 @@ Resources:
                         --no-fail-on-empty-changeset \
                         --template-file ./automation/orgformation.yaml \
                         --stack-name "orgformation" \
-                        --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM \
+                        --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM 
                   else
                       echo "$FullStackName is currently in status $stackStatus and can't be updated"
                   fi
