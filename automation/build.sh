@@ -62,7 +62,7 @@ Exception.GetLastException() {
 try {
     
     echo "check if ./organization/.orgtool is into the source / if not, git clone, reverse setup, git commit, then exit."
-    echo "Next build will deploy for configuration just saved into the repo."
+    echo "Next build will deploy configuration just saved into the repo."
 
     if [ ! -d "./organization/.orgtool/root" ] 
     then

@@ -350,11 +350,12 @@ Resources:
             Resource: "*"
             Action:
               - cloudformation:DescribeStacks
-              - cloudformation:CreateChangeSet
               - cloudformation:CreateStack
               - cloudformation:UpdateStack
-              - cloudformation:DeleteChangeSet
               - cloudformation:DeleteStack
+              - cloudformation:DescribeChangeSet
+              - cloudformation:CreateChangeSet
+              - cloudformation:DeleteChangeSet
               - cloudformation:GetTemplateSummary
 
 
@@ -402,7 +403,6 @@ Resources:
                 python: 3.8
               commands:
                 - |
-
                   echo "install ..."
                   echo "BranchName:                               $BranchName"
                   echo "ArtifactsS3Bucket:                        $ArtifactsS3Bucket"
@@ -416,64 +416,27 @@ Resources:
                   git --version
                   echo 'update PIP'
                   pip install --upgrade pip
-                  
-                                    
+
             pre_build:
               commands:
+                - echo "pre build ..."
                 - |
-
-                  echo "pre build ..."
-
-                - |
-
                   echo "install org-tool"
                   pip install -e ./
                   orgtool --version
                   orgtool --help
+                - bash ./automation/autoupdate.sh
 
-                - |
-
-                  echo "Deploy/Update orgformation stack"
-                  echo "Check orgformation stack status"
-
-                  FullStackName=orgformation
-
-                  echo "cloudformation stack status for orgformation ..."
-                  stackStatus=$(aws cloudformation describe-stacks --region ${AWS_REGION} --stack-name $FullStackName | jq -c -r .Stacks[0].StackStatus)
-                  echo "stack status is $stackStatus"
-
-
-                  if [ "$stackStatus" = "CREATE_COMPLETE" ] \
-                    || [ "$stackStatus" = "DELETE_COMPLETE" ] \
-                    || [ "$stackStatus" = "ROLLBACK_COMPLETE" ] \
-                    || [ "$stackStatus" = "UPDATE_COMPLETE" ] \
-                    || [ "$stackStatus" = "UPDATE_ROLLBACK_COMPLETE" ]; then
-
-                    aws cloudformation deploy \
-                        --no-fail-on-empty-changeset \
-                        --template-file ./automation/orgformation.yaml \
-                        --stack-name "orgformation" \
-                        --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM 
-                  else
-                      echo "$FullStackName is currently in status $stackStatus and can't be updated"
-                  fi
-                                   
             build:
               commands:
                 - |
-
                   echo "build ..."
                   cd $CODEBUILD_SRC_DIR
-
                 - bash ./automation/build.sh
-                  
 
             post_build:
               commands:
-                - |
-
-                  echo "post build ..."
-                  
+                - echo "post build ..."
                   
 ##################### Code Build Projects (Linux)
 
