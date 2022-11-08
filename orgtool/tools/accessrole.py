@@ -53,6 +53,8 @@ def main():
     try:
         role.load()
     except Exception:
+        print("Not able to load the role %s " % (ROLENAME))
+        print("The account can be unusable. Please check")
         pass
     else:
         print("Attaching policy %s to %s" % (POLICYNAME, ROLENAME))

@@ -53,7 +53,7 @@ def commit(client, repositoryName, input_folder, authorName, email, commitMessag
             logger.info("create_commit response is %s" % response)
         except client.exceptions.NoChangeException as e:
             print("No changes discovered. No commit performed.")
-            raise(e)
+            raise e
     except client.exceptions.BranchDoesNotExistException as e:
         # Create initial commit
         logger.info("BranchDoesNotExistException is %s" % e)
