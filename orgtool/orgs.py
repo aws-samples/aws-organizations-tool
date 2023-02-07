@@ -120,7 +120,7 @@ def validate_accounts_unique_in_org_deployed(log, deployed_accounts):
     if duplicate:
         log.critical("Invalid deployed org")
         log.critical(
-            "Duplicate account name found (%s). Org-Tool dosen't support multi account name in the same org."
+            "Duplicate account name found (%s). Org-Tool doesn't support multi account name in the same org."
             % (str(duplicate_values)),
         )
         log.info(
