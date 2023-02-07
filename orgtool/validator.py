@@ -6,9 +6,9 @@ ISSUES:
 """
 # from logging import error
 import yaml
+from cerberus import schema_registry
+from cerberus import Validator
 
-
-from cerberus import Validator, schema_registry
 # from orgtool.utils import yamlfmt
 
 
@@ -253,7 +253,7 @@ Ensure:
   - absent
 """
 
-POLICY_SCHEMA = """
+POLICY_SCHEMA = r"""
 PolicyName:
   required: True
   type: string
@@ -276,7 +276,7 @@ Ensure:
   - absent
 """
 
-ACCOUNT_SCHEMA = """
+ACCOUNT_SCHEMA = r"""
 Name:
   required: True
   type: string
@@ -295,7 +295,7 @@ Tags:
     type: string
 """
 
-USER_SCHEMA = """
+USER_SCHEMA = r"""
 Name:
   required: True
   type: string
@@ -317,7 +317,7 @@ Ensure:
   - absent
 """
 
-GROUP_SCHEMA = """
+GROUP_SCHEMA = r"""
 Name:
   required: True
   type: string
@@ -356,7 +356,7 @@ Ensure:
   - absent
 """
 
-LOCAL_USER_SCHEMA = """
+LOCAL_USER_SCHEMA = r"""
 Name:
   required: True
   type: string
@@ -400,7 +400,7 @@ Ensure:
   - absent
 """
 
-DELEGATION_SCHEMA = """
+DELEGATION_SCHEMA = r"""
 RoleName:
   required: True
   type: string
@@ -458,7 +458,7 @@ Ensure:
   - absent
 """
 
-POLICY_SET_SCHEMA = """
+POLICY_SET_SCHEMA = r"""
 Name:
   required: True
   type: string
@@ -521,24 +521,28 @@ Value:
 
 
 def file_validator(log):
-    schema_registry.add('organizational_unit', yaml.safe_load(ORGANIZATIONAL_UNIT_SCHEMA))
-    schema_registry.add('sc_policy', yaml.safe_load(POLICY_SCHEMA))
-    schema_registry.add('account', yaml.safe_load(ACCOUNT_SCHEMA))
-    schema_registry.add('user', yaml.safe_load(USER_SCHEMA))
-    schema_registry.add('group', yaml.safe_load(GROUP_SCHEMA))
-    schema_registry.add('local_user', yaml.safe_load(LOCAL_USER_SCHEMA))
-    schema_registry.add('delegation', yaml.safe_load(DELEGATION_SCHEMA))
-    schema_registry.add('custom_policy', yaml.safe_load(POLICY_SCHEMA))
-    schema_registry.add('policy_set', yaml.safe_load(POLICY_SET_SCHEMA))
-    schema_registry.add('tag', yaml.safe_load(TAG_SCHEMA))
+    schema_registry.add(
+        "organizational_unit",
+        yaml.safe_load(ORGANIZATIONAL_UNIT_SCHEMA),
+    )
+    schema_registry.add("sc_policy", yaml.safe_load(POLICY_SCHEMA))
+    schema_registry.add("account", yaml.safe_load(ACCOUNT_SCHEMA))
+    schema_registry.add("user", yaml.safe_load(USER_SCHEMA))
+    schema_registry.add("group", yaml.safe_load(GROUP_SCHEMA))
+    schema_registry.add("local_user", yaml.safe_load(LOCAL_USER_SCHEMA))
+    schema_registry.add("delegation", yaml.safe_load(DELEGATION_SCHEMA))
+    schema_registry.add("custom_policy", yaml.safe_load(POLICY_SCHEMA))
+    schema_registry.add("policy_set", yaml.safe_load(POLICY_SET_SCHEMA))
+    schema_registry.add("tag", yaml.safe_load(TAG_SCHEMA))
 
-    schema_registry.add('stack', yaml.safe_load(STACK_SCHEMA))
-    schema_registry.add('parameter', yaml.safe_load(PARAMETER_SCHEMA))
+    schema_registry.add("stack", yaml.safe_load(STACK_SCHEMA))
+    schema_registry.add("parameter", yaml.safe_load(PARAMETER_SCHEMA))
 
-    log.debug("adding subschema to schema_registry: {}".format(
-        schema_registry.all().keys()))
+    log.debug(
+        f"adding subschema to schema_registry: {schema_registry.all().keys()}",
+    )
     vfile = OrgToolValidator(yaml.safe_load(SPEC_FILE_SCHEMA))
-    log.debug("file_validator_schema: {}".format(vfile.schema))
+    log.debug(f"file_validator_schema: {vfile.schema}")
     return vfile
 
 
@@ -590,5 +594,10 @@ class OrgToolValidator(Validator):
         # report errors
         if len(errors) > 0:
             # self._error(field, errors)
-            self._error(field, "Values for fields {} are not unique. Duplicates found: {}".format(
-                str(unique_fields).strip('[]'), str(errors).strip('[]')))
+            self._error(
+                field,
+                "Values for fields {} are not unique. Duplicates found: {}".format(
+                    str(unique_fields).strip("[]"),
+                    str(errors).strip("[]"),
+                ),
+            )

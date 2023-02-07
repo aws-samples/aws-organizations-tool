@@ -28,7 +28,7 @@ Features
   - Nested configurations : Manage the organization description with a combination of includes of distributed sub organization configuration
   - CLI to manipulate and change the configuration files
   - Generate configuration from an existing organisation
-  - Support of resource tagging OUs and accounts.  
+  - Support of resource tagging OUs and accounts.
 
 
 
@@ -80,7 +80,7 @@ awsaccounts
   Manage accounts in an AWS Organization.
 
 awsauth
-  Manage users, group, and roles for cross account access in an 
+  Manage users, group, and roles for cross account access in an
   AWS Organization.
 
 awsloginprofile

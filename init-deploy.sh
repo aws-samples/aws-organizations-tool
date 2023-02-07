@@ -30,7 +30,7 @@ run_init_deploy() {
     uuid=$(od -x /dev/urandom | head -1 | awk '{OFS="-"; print $2$3,$4,$5,$6,$7$8$9}')
     bucket_name="tmp-${uuid//-/}"
     aws s3 mb s3://$bucket_name
-    
+
     echo "zip source.zip ./automation ./orgtool ./spec_init* *.py README.* LICENSE *.sh -r"
     cd $SCRIPT_DIR
     echo "current directory is $(pwd)"
@@ -82,7 +82,7 @@ while getopts hr: opt; do
         *)
             show_help >&2
             exit 1
-            ;;    
+            ;;
     esac
 done
 shift "$((OPTIND-1))"   # Discard the options and sentinel --

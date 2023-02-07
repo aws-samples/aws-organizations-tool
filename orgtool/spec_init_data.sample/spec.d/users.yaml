@@ -14,15 +14,15 @@
 #   RequestId (str):   Ticketing system tracking number of a new user request.
 
 users:
-- Name: paul
-  Ensure: present
-  CN: Paul
-  Email: paul@example.com
-- Name: jane
-  Ensure: present
-  CN: Jane
-  Email: jane@example.com
-- Name: John
-  Ensure: present
-  CN: John
-  Email: john@example.com
+  - Name: paul
+    Ensure: present
+    CN: Paul
+    Email: paul@example.com
+  - Name: jane
+    Ensure: present
+    CN: Jane
+    Email: jane@example.com
+  - Name: John
+    Ensure: present
+    CN: John
+    Email: john@example.com

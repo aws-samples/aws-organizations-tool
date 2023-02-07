@@ -1,21 +1,21 @@
 ---
-# Local User Specification 
+# Local User Specification
 #
-# IAM user resources can be deployed into managed accounts.  Local users 
+# IAM user resources can be deployed into managed accounts.  Local users
 # are typically associated with a service such as SES or S3.  Such users
 # do not have a login profile.
-# 
+#
 # Each local user spce has the following attributes:
 #   Name (str):       The name of local IAM user.
 #   Ensure ('present'[default]|'absent'):
 #                     Ensures whether the local user exists or not.
-#   ContactEmail (str):      
+#   ContactEmail (str):
 #                     The email address with which the user can be contacted.
 #                     Should match the ActiveDirectory 'mail' attribute.
 #   RequestId (str):  Ticketing system tracking number of a new user request.
 #
 #   Description (str):A description applied to the local IAM user.
-#   Service (str):    Name of the AWS service this user interacts with. This 
+#   Service (str):    Name of the AWS service this user interacts with. This
 #                     is used in the IAM resource path.
 #   Account (list(str), 'ALL'):
 #                     List of accounts in which the user is deployed.
@@ -25,19 +25,16 @@
 #                     If 'TrustingAccount' attribute is set to 'ALL',
 #                     any accounts listed in 'ExcludeAccounts' are
 #                     excluded from the delegation.
-#   Policies (list(str)): 
+#   Policies (list(str)):
 #                     List of IAM policies to attach to the local user.
 
 local_users:
-- Name: local-service-user
-  Ensure: present
-  ContactEmail: test@test.com
-  Description: Local service user 
-  Service: ses
-  Account:
-  - dev1
-  Policies:
-  - AmazonSesSendingAccess
-
-
-
+  - Name: local-service-user
+    Ensure: present
+    ContactEmail: test@test.com
+    Description: Local service user
+    Service: ses
+    Account:
+      - dev1
+    Policies:
+      - AmazonSesSendingAccess

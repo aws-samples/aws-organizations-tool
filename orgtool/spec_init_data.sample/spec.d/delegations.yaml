@@ -44,26 +44,22 @@
 #                       Incompatible with "Policies".
 
 delegations:
+  - RoleName: AccountAdmin
+    Ensure: present
+    Description: Full access to all services
+    TrustingAccount: ALL
+    ExcludeAccounts:
+      - master-account
+    TrustedGroup: admins
+    RequireMFA: True
+    Policies:
+      - AdministratorAccess
 
-- RoleName: AccountAdmin
-  Ensure: present
-  Description: Full access to all services
-  TrustingAccount: ALL
-  ExcludeAccounts:
-  - master-account
-  TrustedGroup: admins
-  RequireMFA: True
-  Policies:
-  - AdministratorAccess
-
-- RoleName: Developer
-  Ensure: present
-  Description: Allow developers access in dev1 account
-  TrustingAccount:
-  - dev1
-  TrustedGroup: developers
-  RequireMFA: True
-  PolicySet: Developer
-
-
-
+  - RoleName: Developer
+    Ensure: present
+    Description: Allow developers access in dev1 account
+    TrustingAccount:
+      - dev1
+    TrustedGroup: developers
+    RequireMFA: True
+    PolicySet: Developer

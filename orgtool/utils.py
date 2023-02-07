@@ -1,10 +1,9 @@
 """Utility functions used by the various orgtool modules"""
-
+import difflib
 import io
 import os
-import sys
 import re
-import difflib
+import sys
 import threading
 
 try:
@@ -35,7 +34,7 @@ def get_s3_bucket_name(prefix=S3_BUCKET_PREFIX):
 def lookup(dlist, lkey, lvalue, rkey=None):
     """
     Use a known key:value pair to lookup a dictionary in a list of
-    dictionaries.  Return the dictonary or None.  If rkey is provided,
+    dictionaries.  Return the dictionary or None.  If rkey is provided,
     return the value referenced by rkey or None.  If more than one
     dict matches, raise an error.
     args:
@@ -50,8 +49,9 @@ def lookup(dlist, lkey, lvalue, rkey=None):
     if len(items) > 1:
         raise RuntimeError(
             "Data Error: lkey: {}, lvalue: {} - lookup matches multiple items in dlist".format(
-                lkey, lvalue
-            )
+                lkey,
+                lvalue,
+            ),
         )
     if rkey:
         if rkey in items[0]:
@@ -80,11 +80,21 @@ def search_spec(spec, search_key, recurse_key):
 
 def flatten_OUs(org_spec, log, path=None):
     if not path:
-        if 'organizational_units' in org_spec and len(org_spec['organizational_units']) == 1:
-            if org_spec['organizational_units'][0]['Name'] == 'root':
-                return flatten_OUs(org_spec['organizational_units'], log, '/')
-            elif 'MountingOUPath' in org_spec['organizational_units'][0] and org_spec['organizational_units'][0]['MountingOUPath']:
-                return flatten_OUs(org_spec['organizational_units'], log, org_spec['organizational_units'][0]['MountingOUPath'])
+        if (
+            "organizational_units" in org_spec
+            and len(org_spec["organizational_units"]) == 1
+        ):
+            if org_spec["organizational_units"][0]["Name"] == "root":
+                return flatten_OUs(org_spec["organizational_units"], log, "/")
+            elif (
+                "MountingOUPath" in org_spec["organizational_units"][0]
+                and org_spec["organizational_units"][0]["MountingOUPath"]
+            ):
+                return flatten_OUs(
+                    org_spec["organizational_units"],
+                    log,
+                    org_spec["organizational_units"][0]["MountingOUPath"],
+                )
             else:
                 log.error("'Name: root' or 'MountingOUPath: ...' not found in org_spec")
                 sys.exit(-1)
@@ -95,10 +105,10 @@ def flatten_OUs(org_spec, log, path=None):
         OUs = {}
         for ou in org_spec:
             # ou_path = os.path.join(path,ou['Name'])
-            if (path == '/'):
-                ou_path = path + ou['Name']
+            if path == "/":
+                ou_path = path + ou["Name"]
             else:
-                ou_path = path + '/' + ou['Name']
+                ou_path = path + "/" + ou["Name"]
             OUs[ou_path] = ou
             if "Child_OU" in ou and ou["Child_OU"]:
                 OUs.update(flatten_OUs(ou["Child_OU"], log, ou_path))
@@ -116,7 +126,7 @@ def ensure_absent(spec):
 
 def munge_path(default_path, spec):
     """
-    Return formated 'Path' attribute for use in iam client calls.
+    Return formatted 'Path' attribute for use in iam client calls.
     Unless specified path is fully qualified (i.e. starts with '/'),
     prepend the 'default_path'.
     """
@@ -125,7 +135,7 @@ def munge_path(default_path, spec):
             if spec["Path"][-1] != "/":
                 return spec["Path"] + "/"
             return spec["Path"]
-        return "/%s/%s/" % (default_path, spec["Path"])
+        return "/{}/{}/".format(default_path, spec["Path"])
     return "/%s/" % default_path
 
 
@@ -159,12 +169,12 @@ def get_logger(args):
 def valid_account_id(log, account_id):
     """Validate account Id is a 12 digit string"""
     if not isinstance(account_id, str):
-        log.error("supplied account id {} is not a string".format(account_id))
+        log.error(f"supplied account id {account_id} is not a string")
         return False
     id_re = re.compile(r"^\d{12}$")
     if not id_re.match(account_id):
         log.error(
-            "supplied account id '{}' must be a 12 digit number".format(account_id)
+            f"supplied account id '{account_id}' must be a 12 digit number",
         )
         return False
     return True
@@ -200,12 +210,12 @@ def queue_threads(log, sequence, func, f_args=(), thread_count=20):
     """generalized abstraction for running queued tasks in a thread pool"""
 
     def worker(*args):
-        log.debug("%s: q.empty: %s" % (threading.current_thread().name, q.empty()))
+        log.debug(f"{threading.current_thread().name}: q.empty: {q.empty()}")
         while not q.empty():
-            log.debug("%s: task: %s" % (threading.current_thread().name, func))
+            log.debug(f"{threading.current_thread().name}: task: {func}")
             item = q.get()
             log.debug(
-                "%s: processing item: %s" % (threading.current_thread().name, item)
+                f"{threading.current_thread().name}: processing item: {item}",
             )
             func(item, *args)
             q.task_done()
@@ -226,7 +236,7 @@ def get_assume_role_credentials(account_id, role_name, region_name=None):
     """
     Get temporary sts assume_role credentials for account.
     """
-    role_arn = "arn:aws:iam::%s:role/%s" % (account_id, role_name)
+    role_arn = f"arn:aws:iam::{account_id}:role/{role_name}"
     role_session_name = account_id + "-" + role_name.split("/")[-1]
     sts_client = boto3.client("sts")
 
@@ -240,11 +250,15 @@ def get_assume_role_credentials(account_id, role_name, region_name=None):
     else:
         try:
             credentials = sts_client.assume_role(
-                RoleArn=role_arn, RoleSessionName=role_session_name
+                RoleArn=role_arn,
+                RoleSessionName=role_session_name,
             )["Credentials"]
         except ClientError as e:
             if e.response["Error"]["Code"] == "AccessDenied":
-                errmsg = "cannot assume role %s in account %s" % (role_name, account_id)
+                errmsg = "cannot assume role {} in account {}".format(
+                    role_name,
+                    account_id,
+                )
                 return RuntimeError(errmsg)
         return dict(
             aws_access_key_id=credentials["AccessKeyId"],
@@ -276,7 +290,7 @@ def scan_deployed_accounts(log, org_client):
 
 def scan_deployed_tags_for_resource(log, org_client, ressource_id):
     """
-    Query AWS Organization for deployed tags for the ressource.
+    Query AWS Organization for deployed tags for the resource.
     Returns a list of dictionary.
     """
     log.debug("running")
@@ -284,7 +298,8 @@ def scan_deployed_tags_for_resource(log, org_client, ressource_id):
     deployed_tags = tags["Tags"]
     while "NextToken" in tags and tags["NextToken"]:
         tags = org_client.list_tags_for_resource(
-            ResourceId=ressource_id, NextToken=tags["NextToken"]
+            ResourceId=ressource_id,
+            NextToken=tags["NextToken"],
         )
         deployed_tags += tags["Tags"]
     # only return accounts that have an 'Name' key
@@ -305,7 +320,8 @@ def scan_created_accounts(log, org_client):
     created_accounts = status["CreateAccountStatuses"]
     while "NextToken" in status and status["NextToken"]:
         status = org_client.list_create_account_status(
-            States=["SUCCEEDED"], NextToken=status["NextToken"]
+            States=["SUCCEEDED"],
+            NextToken=status["NextToken"],
         )
         created_accounts += status["CreateAccountStatuses"]
     return created_accounts
@@ -362,7 +378,7 @@ def string_differ(string1, string2):
 
 
 def yamlfmt(dict_obj):
-    """Convert a dictionary object into a yaml formated string"""
+    """Convert a dictionary object into a yaml formatted string"""
     yaml = ruamel.yaml.YAML()
     with io.StringIO() as string_stream:
         yaml.dump(dict_obj, string_stream)
@@ -373,7 +389,7 @@ def yamlfmt(dict_obj):
 
 
 def yamlfmtfile(dict_obj, file):
-    """Convert a dictionary object into a yaml formated file"""
+    """Convert a dictionary object into a yaml formatted file"""
     yaml = ruamel.yaml.YAML()
     with open(file, "w") as f:
         yaml.dump(dict_obj, f)
@@ -383,7 +399,7 @@ def dump_to_spec_config(args, log, org_spec, config_key, spec_dir_template=None)
     log.debug("dump yaml dict to file config")
 
     if config_key not in org_spec:
-        log.error("'{}' not found in org_spec".format(config_key))
+        log.error(f"'{config_key}' not found in org_spec")
         sys.exit(-1)
 
     spec_dir = args["--spec-dir"]
@@ -399,7 +415,7 @@ def dump_to_spec_config(args, log, org_spec, config_key, spec_dir_template=None)
     #   sys.exit(1)
 
     if not os.path.isfile(source_file_config_path):
-        log.error("spec config file not found: {}".format(source_file_config_path))
+        log.error(f"spec config file not found: {source_file_config_path}")
         sys.exit(1)
 
     yaml = ruamel.yaml.YAML()
@@ -416,17 +432,22 @@ def dump_to_spec_config(args, log, org_spec, config_key, spec_dir_template=None)
     # update the config file if --exec
     if args["--exec"]:
         yamlfmtfile(spec_config, dest_file_config_path)
-        log.debug('Yaml dict configuration {} dump into {} with success'.format(config_key, dest_file_config_path))
+        log.debug(
+            "Yaml dict configuration {} dump into {} with success".format(
+                config_key,
+                dest_file_config_path,
+            ),
+        )
 
 
 def overbar(string):
     """
-    Returns string preceeded by an overbar of the same length:
+    Returns string preceded by an overbar of the same length:
     >>> print(overbar('blee'))
     ____
     blee
     """
-    return "%s\n%s" % ("_" * len(string), string)
+    return "{}\n{}".format("_" * len(string), string)
 
 
 def report_maker(log, accounts, role, query_func, report_header=None, **qf_args):
@@ -448,7 +469,11 @@ def report_maker(log, accounts, role, query_func, report_header=None, **qf_args)
     # gather report data from accounts
     report = {}
     queue_threads(
-        log, accounts, make_account_report, f_args=(report, role), thread_count=10
+        log,
+        accounts,
+        make_account_report,
+        f_args=(report, role),
+        thread_count=10,
     )
     # process the reports
     if report_header:

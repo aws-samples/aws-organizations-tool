@@ -13,24 +13,24 @@
 #                 Valid characters: a-z, A-Z, 0-9, and . : + = @ _ / - (hyphen)
 
 accounts:
-- Name: master-account
-  Email: master-account@example.com
-  Alias: master
-  Tags:
-    Owner: Paul
-    Application: infrastructure
-    Environment: production
-- Name: central-auth
-  Email: central-auth@example.com
-  Alias: auth
-  Tags:
-    Owner: Paul
-    Application: infrastructure
-    Environment: production
-- Name: dev1
-  Email: dev1@example.com
-  Alias: dev1
-  Tags:
-    Owner: John
-    Application: orgtool
-    Environment: development
+  - Name: master-account
+    Email: master-account@example.com
+    Alias: master
+    Tags:
+      Owner: Paul
+      Application: infrastructure
+      Environment: production
+  - Name: central-auth
+    Email: central-auth@example.com
+    Alias: auth
+    Tags:
+      Owner: Paul
+      Application: infrastructure
+      Environment: production
+  - Name: dev1
+    Email: dev1@example.com
+    Alias: dev1
+    Tags:
+      Owner: John
+      Application: orgtool
+      Environment: development

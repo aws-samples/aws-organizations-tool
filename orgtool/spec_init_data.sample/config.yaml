@@ -11,8 +11,8 @@ org_access_role: Org_Provisioning
 #org_access_role: OrganizationAccountAccessRole
 
 # AWS account Id for the Organization master account.  This must be in quotes.
-master_account_id: '121212121212'
+master_account_id: "121212121212"
 
 # AWS account Id for the Central Auth account.  This must be in quotes.
 # This Central Auth account can be the same as the Master account.
-auth_account_id: '343434343434'
+auth_account_id: "343434343434"

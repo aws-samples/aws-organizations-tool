@@ -13,22 +13,19 @@
 #   Policies (list(str)):   list of IAM policy names
 
 policy_sets:
-- Name: Developer
-  Description: Access for application developers.
-  Tags:
-  - Key: jobfunctionrole
-    Value: 'True'
-  Policies:
-  - PowerUserAccess
-  - IAMReadOnlyAccess
-- Name: TesterPolicySet
-  Description: Access for testers
-  Tags:
-  - Key: jobfunctionrole
-    Value: 'True'
-  Policies:
-  - ReadOnlyAccess
-  - ReadS3Bucket
-
-
-
+  - Name: Developer
+    Description: Access for application developers.
+    Tags:
+      - Key: jobfunctionrole
+        Value: "True"
+    Policies:
+      - PowerUserAccess
+      - IAMReadOnlyAccess
+  - Name: TesterPolicySet
+    Description: Access for testers
+    Tags:
+      - Key: jobfunctionrole
+        Value: "True"
+    Policies:
+      - ReadOnlyAccess
+      - ReadS3Bucket

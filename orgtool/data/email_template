@@ -36,7 +36,7 @@ https://support.google.com/accounts/answer/1066447?co=GENIE.Platform%3DiOS&hl=en
 
 
 3) Log out and log back in again.  You will be queried for your 6 digit
-token code.  
+token code.
 
 
 4) Verify you can switch role into any accounts where you have cross
@@ -48,14 +48,14 @@ Instructions:
 https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-console.html?icmpid=docs_iam_console
 
 
-5) (optional) Set up 'AWS Access Keys' for your IAM user.  
+5) (optional) Set up 'AWS Access Keys' for your IAM user.
 
 Instructions:
 http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey
 
 
 Your IAM user has been delegated cross account access to the following
-accounts.  
+accounts.
 
 $delegations
 

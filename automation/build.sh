@@ -35,7 +35,7 @@ Exception.Extract() {
     local retVal=$1
     if [[ $retVal -gt 0 ]]
     then
-        # BACKWARDS COMPATIBILE WAY:
+        # BACKWARDS COMPATIBLE WAY:
         # export __EXCEPTION_SOURCE__="${__EXCEPTION_CATCH__[(${#__EXCEPTION_CATCH__[@]}-1)]}"
         # export __EXCEPTION_LINE__="${__EXCEPTION_CATCH__[(${#__EXCEPTION_CATCH__[@]}-2)]}"
         export __EXCEPTION_SOURCE__="${__EXCEPTION_CATCH__[-1]}"
@@ -60,13 +60,13 @@ Exception.GetLastException() {
 }
 
 try {
-    
+
     echo "check if ./organization/.orgtool is into the source / if not, git clone, reverse setup, git commit, then exit."
     echo "Next build will deploy configuration just saved into the repo."
 
-    if [ ! -d "./organization/.orgtool/root" ] 
+    if [ ! -d "./organization/.orgtool/root" ]
     then
-        echo "orgtool configuration is not yet setup into the ${OrganisationConfigurationCodeCommitName} repository." 
+        echo "orgtool configuration is not yet setup into the ${OrganisationConfigurationCodeCommitName} repository."
 
         git config --global credential.helper '!aws codecommit credential-helper $@'
         git config --global credential.UseHttpPath true
@@ -84,7 +84,7 @@ try {
         HEAD_COMMIT_ID=$(git show -s HEAD --pretty=format:%H)
         echo "HEAD_COMMIT_ID is $HEAD_COMMIT_ID"
 
-        orgtoolconfigure reverse-setup --template-dir "./spec_init_data.blank" --output-dir "./organization/.orgtool/root"  --master-account-id "${ACCOUNT_ID}" --org-access-role "${OrgAccessRole}" --exec        
+        orgtoolconfigure reverse-setup --template-dir "./spec_init_data.blank" --output-dir "./organization/.orgtool/root"  --master-account-id "${ACCOUNT_ID}" --org-access-role "${OrgAccessRole}" --exec
 
         git add -A
         git commit -a -m "Organization configuration initialized"
@@ -94,7 +94,7 @@ try {
 
     cd $CODEBUILD_SRC_DIR
 
-    if [ -d "./organization/.orgtool/root" ] 
+    if [ -d "./organization/.orgtool/root" ]
     then
         echo "Organization found into the repo, then deploy the changes"
 
@@ -114,6 +114,6 @@ try {
 
 
 } catch {
-    echo "Error in $__EXCEPTION_SOURCE__ at line: $__EXCEPTION_LINE__!"    
+    echo "Error in $__EXCEPTION_SOURCE__ at line: $__EXCEPTION_LINE__!"
     exit 1
 }

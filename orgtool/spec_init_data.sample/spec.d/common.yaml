@@ -1,15 +1,14 @@
 ---
-
 # orgtool installation must be greater than or equal to this version number.
-minimum_version: '0.9.0'
+minimum_version: "0.9.0"
 
 # orgtool configuration parameters common to all operations.
 
 # AWS account Id for the Organization master account.  This must be in quotes.
-master_account_id: '121212121212'
+master_account_id: "121212121212"
 
 # AWS account Id for the Central Auth account.  This must be in quotes.
-auth_account_id: '343434343434'
+auth_account_id: "343434343434"
 
 # Email domain to use for account creation if the accounts['Email'] field
 # is not explicitly specified.
@@ -37,6 +36,3 @@ default_smtp_server: smtp.example.com
 
 # These contacts are references when generating email messages.
 org_admin_email: awsadmins@example.com
-
-
-

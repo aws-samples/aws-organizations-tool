@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''
+"""
 Install initial orgtool config and spec files into user's home directory
 
 Usage:
@@ -11,16 +11,14 @@ Options:
                     [Default: ~/.orgtool/config.yaml].
   --spec-dir PATH   Where to install AWS Org specification files
                     [Default: ~/.orgtool/spec.d].
-'''
-
-
+"""
+import logging
 import os
-import sys
 import shutil
+import sys
+
 import pkg_resources
 from docopt import docopt
-
-import logging
 
 
 def main():
@@ -35,18 +33,18 @@ def main():
 
     errors = []
     source_dir = os.path.abspath(
-        pkg_resources.resource_filename(__name__, '../spec_init_data.sample')
+        pkg_resources.resource_filename(__name__, "../spec_init_data.sample"),
     )
-    source_config_file = os.path.join(source_dir, 'config.yaml')
-    source_spec_dir = os.path.join(source_dir, 'spec.d')
-    target_config_file = os.path.expanduser(args['--config'])
+    source_config_file = os.path.join(source_dir, "config.yaml")
+    source_spec_dir = os.path.join(source_dir, "spec.d")
+    target_config_file = os.path.expanduser(args["--config"])
     target_config_dir = os.path.dirname(target_config_file)
-    target_spec_dir = os.path.expanduser(args['--spec-dir'])
+    target_spec_dir = os.path.expanduser(args["--spec-dir"])
 
     if os.path.exists(target_config_file):
         errors.append(
             "Config file '{}' exists. "
-            "Refusing to overwrite.".format(target_config_file)
+            "Refusing to overwrite.".format(target_config_file),
         )
     else:
         try:
@@ -64,7 +62,7 @@ def main():
     if os.listdir(target_spec_dir):
         errors.append(
             "Spec directory '{}' exists and is not empty. "
-            "Refusing to overwrite.".format(target_spec_dir)
+            "Refusing to overwrite.".format(target_spec_dir),
         )
     else:
         for file in os.listdir(source_spec_dir):
@@ -73,10 +71,12 @@ def main():
                 target_spec_dir,
             )
 
-    log.info("Sample config created from {} to {}.".format(source_dir, target_config_dir))
+    log.info(
+        f"Sample config created from {source_dir} to {target_config_dir}.",
+    )
 
     if errors:
-        sys.exit('\n'.join(errors))
+        sys.exit("\n".join(errors))
 
 
 if __name__ == "__main__":

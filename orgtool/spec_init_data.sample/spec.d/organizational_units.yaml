@@ -6,18 +6,18 @@
 #
 # Each organizational_unit spec (OU) has the following attributes:
 #   Name (str):     The name of the OU (required)
-#   Ensure (str):   One of 'present' (default) or 'absent'.  Setting to 
+#   Ensure (str):   One of 'present' (default) or 'absent'.  Setting to
 #                   'absent' will cause the OU to be deleted but
 #                   only if no accounts are still assigned to the OU.
-#   Accounts (list(str)): 
+#   Accounts (list(str)):
 #                   List of account names assigned to this OU.
-#   SC_Policies (list(str)): 
+#   SC_Policies (list(str)):
 #                   List of Service Control Policies attached to this OU.
 #   Child_OU (list(organizational_unit)):
 #                   List of child Organizational Units (recursive structure).
 #   IncludeConfigPath (string):
 #                   Path to the config file of an orgtool configuration to include here for the tree and merge for the Accounts and SCPs
-#                   The Name of OU is equal to the name of the upper OU in the included configuration 
+#                   The Name of OU is equal to the name of the upper OU in the included configuration
 #   MountingOUPath (string):
 #                   For an included configuration, this is the reference to the mounting point path into the OUs tree.
 #                   This exists only if the upper name of the tree is not "root". if not, raise an exception
@@ -30,16 +30,14 @@
 #                   Valid characters: a-z, A-Z, 0-9, and . : + = @ _ / - (hyphen)
 
 organizational_units:
-# the root OU must be defined
-- Name: root
-  Accounts: 
-  - master-account 
-  - central-auth
-  Child_OU:
-  - Name: applications
+  # the root OU must be defined
+  - Name: root
     Accounts:
-    - dev1
-    SC_Policies:
-    - LimitAWSRegions
-
-
+      - master-account
+      - central-auth
+    Child_OU:
+      - Name: applications
+        Accounts:
+          - dev1
+        SC_Policies:
+          - LimitAWSRegions

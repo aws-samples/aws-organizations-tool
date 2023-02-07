@@ -9,7 +9,7 @@ echo "##### run cmd: orgtool report --config ./organization/.orgtool/config.yaml
     #save your output
 } || { # catch
     echo "##### cmd output (with error):"
-    # save log for exception 
+    # save log for exception
 }
 cat ./orgtool-report.log
 
@@ -19,6 +19,6 @@ echo "#### run cmd: awsaccounts report --config ./organization/.orgtool/config.y
     #save your output
 } || { # catch
     echo "##### cmd output (with error):"
-    # save log for exception 
+    # save log for exception
 }
 cat ./awsaccounts-report.log

@@ -8,28 +8,25 @@
 #  Ensure (str):    One of 'present' (default) or 'absent'. Setting to
 #                   'absent' will cause the group to be deleted, but
 #                   only if the group contains no users.
-#  Members (list(str), 'ALL'): 
+#  Members (list(str), 'ALL'):
 #                   List of IAM users who are members of this group.
 #                   If set to 'ALL', all managed users in the Central
 #                   Auth account become members.
 #  ExcludeMembers (list(str)):
-#                   If 'Members' attribute is set to 'ALL', any users 
+#                   If 'Members' attribute is set to 'ALL', any users
 #                   listed in 'ExcludeMembers' are excluded from the group.
 #  Policies (list(str)):
 #                   List of IAM policies to attach to this group.
 
 groups:
-- Name: all-users
-  Members: ALL
-  Policies:
-  - UserSelfService
-- Name: admins
-  Members:
-  - paul 
-- Name: devops
-  Members:
-  - jane 
-  - john 
-
-
-
+  - Name: all-users
+    Members: ALL
+    Policies:
+      - UserSelfService
+  - Name: admins
+    Members:
+      - paul
+  - Name: devops
+    Members:
+      - jane
+      - john

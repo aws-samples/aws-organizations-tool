@@ -19,7 +19,7 @@ echo '#### flake8 --ignore E501,W605'
 flake8 --ignore E501,W605
 
 echo '#### cfn-lint ./automation/*.yaml'
-cfn-lint ./automation/*.yaml 
+cfn-lint ./automation/*.yaml
 
 echo '#### cfn_nag_scan --input-path ./**/*.yaml'
 cfn_nag_scan --input-path ./**/*.yaml

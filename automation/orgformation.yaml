@@ -1,8 +1,8 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 # Transform: AWS::Serverless-2016-10-31
 
 Description: |
-  Resources to perform IaC Organozation Formation
+  Resources to perform IaC Organization Formation
 
 Parameters:
   BranchName:
@@ -13,10 +13,7 @@ Parameters:
   CodeInitBucketName:
     Type: String
 
-
-
 Resources:
-
   ArtifactsS3Bucket:
     Metadata:
       cfn_nag:
@@ -32,15 +29,13 @@ Resources:
         BlockPublicAcls: True
         BlockPublicPolicy: True
         IgnorePublicAcls: True
-        RestrictPublicBuckets: True  
+        RestrictPublicBuckets: True
       BucketEncryption:
         ServerSideEncryptionConfiguration:
-        - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
 
-
-
-  ################# Custom ressource management S3 BUcket
+  ################# Custom resource management S3 Bucket
   EmptyS3BucketOnDeletionLambdaExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -65,7 +60,7 @@ Resources:
                 Resource:
                   - arn:aws:s3:::*
                   - arn:aws:s3:::*/*
-                  
+
         - PolicyName: S3Policy
           PolicyDocument:
             Version: 2012-10-17
@@ -77,7 +72,7 @@ Resources:
                 Resource:
                   - arn:aws:s3:::*
                   - arn:aws:s3:::*/*
-    
+
   EmptyS3BucketOnDeletionLambdaFunction:
     Metadata:
       cfn_nag:
@@ -119,9 +114,7 @@ Resources:
       ServiceToken: !GetAtt EmptyS3BucketOnDeletionLambdaFunction.Arn
       s3bucketName: !Ref ArtifactsS3Bucket
 
-  ################# Custom ressource management S3 BUcket
-
-
+  ################# Code Commit Repository for Organisation configuration
 
   OrganisationConfigurationCodeCommit:
     Type: AWS::CodeCommit::Repository
@@ -129,30 +122,27 @@ Resources:
       RepositoryDescription: Repository used to store the organisation configuration
       RepositoryName: !Sub organisation-configuration-${AWS::AccountId}
       Code:
-          BranchName: !Ref BranchName
-          S3: 
-            Bucket: !Ref CodeInitBucketName
-            Key: source.zip
-  
+        BranchName: !Ref BranchName
+        S3:
+          Bucket: !Ref CodeInitBucketName
+          Key: source.zip
 
-
-################### Roles
+  ################### Roles
   OrgAccessRole:
     Metadata:
       cfn_nag:
         rules_to_suppress:
           - id: W28
-            reason: "Resource found with an explicit name, this disallows updates that require replacement of this resource is intented"
+            reason: "Resource found with an explicit name, this disallows updates that require replacement of this resource is intended"
           - id: W43
-            reason: "This roles is the AWS Organization for to assume admin role accross all organization account. this is an administrator role."
+            reason: "This roles is the AWS Organization for to assume admin role across all organization account. this is an administrator role."
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Ref OrgAccessRoleName
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               AWS: !Ref AWS::AccountId
             Action:
@@ -161,53 +151,49 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
-
-      
   OrgFormationCodePipelineRole:
     Metadata:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "All policies are defined by service statemant and used at the master level to manage the whole AWS Organization"
+            reason: "All policies are defined by service statement and used at the master level to manage the whole AWS Organization"
           - id: W28
-            reason: "Resource found with an explicit name, this disallows updates that require replacement of this resource is intented"
+            reason: "Resource found with an explicit name, this disallows updates that require replacement of this resource is intended"
     Type: AWS::IAM::Role
     Properties:
       RoleName: orgformationcodepipelinerole
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-        - Effect: "Allow"
-          Principal:
-            Service:
-            - codepipeline.amazonaws.com
-          Action:
-          - "sts:AssumeRole"
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
       Path: /
       Policies:
-      - PolicyName: orgformationcodepipelinerole-policy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - codecommit:Get*
-            - codecommit:List*
-            - codecommit:UploadArchive
-            - codebuild:StartBuild
-            - codebuild:BatchGetBuilds
-            - logs:CreateLogStream
-            - s3:GetObject
-            - s3:ListBucket
-            Resource: '*'
-          - Effect: Allow
-            Action:
-            - s3:PutObject
-            Resource:
-            - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}/*
-            - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
-  
-
+        - PolicyName: orgformationcodepipelinerole-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codecommit:Get*
+                  - codecommit:List*
+                  - codecommit:UploadArchive
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - logs:CreateLogStream
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}/*
+                  - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
 
   OrgFormationCodeBuildRole:
     Metadata:
@@ -216,158 +202,144 @@ Resources:
           - id: W11
             reason: "All policies are defined by service statemant and used at the master level to manage the whole AWS Organization"
           - id: W28
-            reason: "Resource found with an explicit name, this disallows updates that require replacement of this resource is intented"
+            reason: "Resource found with an explicit name, this disallows updates that require replacement of this resource is intended"
     Type: AWS::IAM::Role
     Properties:
       RoleName: orgformationcodebuildrole
       AssumeRolePolicyDocument:
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - codebuild.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: "/"
-      Policies:  
-      - PolicyName: orgformationcodebuildrole-policy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - 
-            Effect: Allow
-            Resource: "*"
-            Action:
-              - codecommit:BatchGetRepositories
-              - codecommit:Get*
-              # - codecommit:GitPull
-              - codecommit:Git*
-              - codecommit:List*
-              - codecommit:CancelUploadArchive
-              - codecommit:UploadArchive  
-          - 
-            Effect: Allow
-            Resource: "*"
-            Action:
-              - codebuild:StartBuild
-          - 
-            Effect: Allow
-            Resource: "*"
-            Action:
-              - logs:CreateLogGroup 
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-          - 
-            Effect: Allow
-            Resource: "*"
-            Action:
-              - iam:ListUsers
-              - iam:ListGroups
-              - iam:ListAccountAliases
-              - iam:DeleteAccountAlias
-              - iam:CreateAccountAlias
-              - iam:GetRole
-          - 
-            Effect: Allow
-            Resource: "*"
-            Action:
-              - organizations:AcceptHandshake
-              - organizations:AttachPolicy
-              - organizations:CancelHandshake
-              - organizations:CloseAccount
-              - organizations:CreateAccount
-              - organizations:CreateGovCloudAccount
-              - organizations:CreateOrganization
-              - organizations:CreateOrganizationalUnit
-              - organizations:CreatePolicy
-              - organizations:DeclineHandshake
-              - organizations:DeleteOrganization
-              - organizations:DeleteOrganizationalUnit
-              - organizations:DeletePolicy
-              - organizations:DeregisterDelegatedAdministrator
-              - organizations:DescribeAccount
-              - organizations:DescribeCreateAccountStatus
-              - organizations:DescribeEffectivePolicy
-              - organizations:DescribeHandshake
-              - organizations:DescribeOrganization
-              - organizations:DescribeOrganizationalUnit
-              - organizations:DescribePolicy
-              - organizations:DetachPolicy
-              - organizations:DisableAWSServiceAccess
-              - organizations:DisablePolicyType
-              - organizations:EnableAWSServiceAccess
-              - organizations:EnableAllFeatures
-              - organizations:EnablePolicyType
-              - organizations:InviteAccountToOrganization
-              - organizations:LeaveOrganization
-              - organizations:ListAWSServiceAccessForOrganization
-              - organizations:ListAccounts
-              - organizations:ListAccountsForParent
-              - organizations:root
-              - organizations:ListChildren
-              - organizations:ListCreateAccountStatus
-              - organizations:ListDelegatedAdministrators
-              - organizations:ListDelegatedServicesForAccount
-              - organizations:ListHandshakesForAccount
-              - organizations:ListHandshakesForOrganization
-              - organizations:ListOrganizationalUnitsForParent
-              - organizations:ListParents
-              - organizations:ListPolicies
-              - organizations:ListPoliciesForTarget
-              - organizations:ListRoots
-              - organizations:ListTagsForResource
-              - organizations:ListTargetsForPolicy
-              - organizations:MoveAccount
-              - organizations:RegisterDelegatedAdministrator
-              - organizations:RemoveAccountFromOrganization
-              - organizations:TagResource
-              - organizations:UntagResource
-              - organizations:UpdateOrganizationalUnit
-              - organizations:UpdatePolicy
-
-          - 
-            Effect: Allow
-            Resource: "*"
-            Action:
-              - s3:GetObject
-              - s3:ListBucket
-          - 
-            Effect: Allow
-            Resource: "*"
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
             Action:
               - sts:AssumeRole
-              - states:SendTaskSuccess
-              - states:SendTaskFailure
-          - 
-            Effect: Allow
-            Action:
-              - s3:PutObject
-            Resource:
-              - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}/*
-              - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
-          - 
-            Effect: Allow
-            Resource: "*"
-            Action:
-              - cloudformation:DescribeStacks
-              - cloudformation:CreateStack
-              - cloudformation:UpdateStack
-              - cloudformation:DeleteStack
-              - cloudformation:DescribeChangeSet
-              - cloudformation:CreateChangeSet
-              - cloudformation:DeleteChangeSet
-              - cloudformation:GetTemplateSummary
+      Path: "/"
+      Policies:
+        - PolicyName: orgformationcodebuildrole-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - codecommit:BatchGetRepositories
+                  - codecommit:Get*
+                  # - codecommit:GitPull
+                  - codecommit:Git*
+                  - codecommit:List*
+                  - codecommit:CancelUploadArchive
+                  - codecommit:UploadArchive
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - codebuild:StartBuild
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - iam:ListUsers
+                  - iam:ListGroups
+                  - iam:ListAccountAliases
+                  - iam:DeleteAccountAlias
+                  - iam:CreateAccountAlias
+                  - iam:GetRole
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - organizations:AcceptHandshake
+                  - organizations:AttachPolicy
+                  - organizations:CancelHandshake
+                  - organizations:CloseAccount
+                  - organizations:CreateAccount
+                  - organizations:CreateGovCloudAccount
+                  - organizations:CreateOrganization
+                  - organizations:CreateOrganizationalUnit
+                  - organizations:CreatePolicy
+                  - organizations:DeclineHandshake
+                  - organizations:DeleteOrganization
+                  - organizations:DeleteOrganizationalUnit
+                  - organizations:DeletePolicy
+                  - organizations:DeregisterDelegatedAdministrator
+                  - organizations:DescribeAccount
+                  - organizations:DescribeCreateAccountStatus
+                  - organizations:DescribeEffectivePolicy
+                  - organizations:DescribeHandshake
+                  - organizations:DescribeOrganization
+                  - organizations:DescribeOrganizationalUnit
+                  - organizations:DescribePolicy
+                  - organizations:DetachPolicy
+                  - organizations:DisableAWSServiceAccess
+                  - organizations:DisablePolicyType
+                  - organizations:EnableAWSServiceAccess
+                  - organizations:EnableAllFeatures
+                  - organizations:EnablePolicyType
+                  - organizations:InviteAccountToOrganization
+                  - organizations:LeaveOrganization
+                  - organizations:ListAWSServiceAccessForOrganization
+                  - organizations:ListAccounts
+                  - organizations:ListAccountsForParent
+                  - organizations:root
+                  - organizations:ListChildren
+                  - organizations:ListCreateAccountStatus
+                  - organizations:ListDelegatedAdministrators
+                  - organizations:ListDelegatedServicesForAccount
+                  - organizations:ListHandshakesForAccount
+                  - organizations:ListHandshakesForOrganization
+                  - organizations:ListOrganizationalUnitsForParent
+                  - organizations:ListParents
+                  - organizations:ListPolicies
+                  - organizations:ListPoliciesForTarget
+                  - organizations:ListRoots
+                  - organizations:ListTagsForResource
+                  - organizations:ListTargetsForPolicy
+                  - organizations:MoveAccount
+                  - organizations:RegisterDelegatedAdministrator
+                  - organizations:RemoveAccountFromOrganization
+                  - organizations:TagResource
+                  - organizations:UntagResource
+                  - organizations:UpdateOrganizationalUnit
+                  - organizations:UpdatePolicy
 
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - sts:AssumeRole
+                  - states:SendTaskSuccess
+                  - states:SendTaskFailure
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}/*
+                  - !Sub arn:aws:s3:::orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - cloudformation:DescribeStacks
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:GetTemplateSummary
 
+  ################### Roles
 
-
-################### Roles
-
-
-##################### Code Build Projects (Linux)
+  ##################### Code Build Projects (Linux)
 
   OrgFormationCodeBuildProject:
-  
     Metadata:
       cfn_nag:
         rules_to_suppress:
@@ -437,11 +409,10 @@ Resources:
             post_build:
               commands:
                 - echo "post build ..."
-                  
-##################### Code Build Projects (Linux)
 
+  ##################### Code Build Projects (Linux)
 
-############### Pipeline
+  ############### Pipeline
 
   OrgFormationCodePipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -452,12 +423,10 @@ Resources:
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactsS3Bucket
-      Stages: 
-        - 
-          Name: Source
+      Stages:
+        - Name: Source
           Actions:
-            - 
-              Name: Source
+            - Name: Source
               ActionTypeId:
                 Category: Source
                 Owner: AWS
@@ -471,11 +440,9 @@ Resources:
                 RepositoryName: !GetAtt OrganisationConfigurationCodeCommit.Name
                 PollForSourceChanges: true
               RunOrder: 1
-        - 
-          Name: Deploy
+        - Name: Deploy
           Actions:
-            - 
-              Name: Deploy
+            - Name: Deploy
               ActionTypeId:
                 Category: Build
                 Provider: CodeBuild
@@ -490,18 +457,7 @@ Resources:
               RunOrder: 1
 ############# Pipeline
 
-
-
-
 Outputs:
   OutputStackName:
     Description: Created stack name
     Value: !Ref AWS::StackName
-
-
-
-
-
-
-
-
