@@ -131,3 +131,9 @@ option for usage documentation.
     Laurent Delhomme (delhom@amazon.com)
 
 :Version: 0.9.1
+
+License Summary
+---------------
+This document is made available under the Creative Commons Attribution-ShareAlike 4.0 International License. . See LICENSE file.
+
+The sample code within this documentation is made available under the MIT-0 license See License-SAMPLECODE file
