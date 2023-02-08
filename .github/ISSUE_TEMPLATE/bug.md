@@ -1,5 +1,5 @@
 ---
-name: Bug Report
+name: Bug report
 about: Suggest an idea for this project
 title: ""
 labels: ""
