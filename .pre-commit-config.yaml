@@ -85,6 +85,7 @@ repos:
           spec_init_data.blank/spec.d/\w+.yaml|
           spec_init_data.entity/\w+.yaml|
           spec_init_data.entity/spec.d/\w+.yaml|
+          .github/workflows/pull-request.yml|
           )$
   - repo: https://github.com/stelligent/cfn_nag
     rev: "v0.8.10"
@@ -99,5 +100,6 @@ repos:
           spec_init_data.blank/spec.d/\w+.yaml|
           spec_init_data.entity/\w+.yaml|
           spec_init_data.entity/spec.d/\w+.yaml|
+          .github/workflows/pull-request.yml||
           )$
 
