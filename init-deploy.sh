@@ -91,7 +91,3 @@ show_help
 # Everything that's left in "$@" is a non-option.
 # printf 'org_access_role_name=<%s>\n' "$org_access_role_name"
 # printf '<%s>\n' "$@"
-
-
-
-
