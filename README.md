@@ -1,7 +1,5 @@
 # Getting started with orgtool
 
-_nota: this project is a fork from aws-orgs (https://github.com/ucopacme/aws-orgs)_
-
 **orgtool** is a configuration management tool set for AWS Organizations written in python. This tooling enable the configuration and management of AWS Organization with code.
 
 ## Features
@@ -509,6 +507,8 @@ orgtoolconfigure distributed-config create --template-config ./spec_init_data.en
 ## Conclusion:
 
 `orgtool` is a powerful tool to help customers to manage their AWS Organization with code. In collaboration with CodeCommit, CodePipeline and CodeBuild, customer build powerful landing zone including the manage of large AWS Organization where many team share the same top level configuration and run independently into their dedicated space.
+
+This tool was originally based upon a fork of https://github.com/ucopacme/aws-orgs by Ashley Gould agould@ucop.edu
 
 Author: Laurent Delhomme (delhom@amazon.com)
 

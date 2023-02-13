@@ -3,10 +3,6 @@ Getting started with orgtool
 
 A configuration management tool set for AWS Organizations.
 
-NOTA:
-This tool is a fork from aws-orgs, published by Ashley Gould <agould@ucop.edu> at https://github.com/ucopacme/aws-orgs
-
-
 Features
 --------
 
@@ -128,6 +124,11 @@ option for usage documentation.
 :Author:
     Laurent Delhomme (delhom@amazon.com)
     David Hessler (dhhessl@amazon.com)
+
+:Thanks:
+
+This tool was originally based upon a fork of https://github.com/ucopacme/aws-orgs, published by Ashley Gould <agould@ucop.edu>.
+
 
 License Summary
 ---------------
