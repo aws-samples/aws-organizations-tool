@@ -510,7 +510,7 @@ orgtoolconfigure distributed-config create --template-config ./spec_init_data.en
 
 This tool was originally based upon a fork of https://github.com/ucopacme/aws-orgs by Ashley Gould agould@ucop.edu
 
-Author: Laurent Delhomme (delhom@amazon.com)
+Author: Laurent Delhomme (delhom@amazon.com), David Hessler (dhhessl@amazon.com)
 
 Version: 0.9.1
 
