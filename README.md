@@ -31,14 +31,14 @@
 
 ### Editable copy using virtual environment (recommended):
 
-    git clone https://gitlab.aws.dev/delhom/org-tool
+    git clone git@github.com:aws-samples/aws-organizations-tool.git
     python -m venv ./org-tool/venv
     source ./org-tool/venv/bin/activate
     pip install -e ./org-tool/
 
 ### Editable copy
 
-    git clone https://gitlab.aws.dev/delhom/org-tool
+    git clone git@github.com:aws-samples/aws-organizations-tool.git
     pip install -e org-tool/
 
 ### Uninstall:
