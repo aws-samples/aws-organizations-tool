@@ -1,4 +1,4 @@
-# Getting started with orgtool
+# Getting started with AWS Organizations Tool
 
 **orgtool** is a configuration management tool set for AWS Organizations written in python. This tooling enable the configuration and management of AWS Organization with code.
 

@@ -1,4 +1,4 @@
-Getting started with orgtool
+Getting started with AWS Organizations Tool
 =============================
 
 A configuration management tool set for AWS Organizations.
