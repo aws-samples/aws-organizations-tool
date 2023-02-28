@@ -1,4 +1,4 @@
-"""org-tool setup"""
+"""aws-organizations-tool setup"""
 from codecs import open
 from os import path
 
@@ -12,11 +12,11 @@ with open(path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="org-tool",
+    name="aws-organizations-tool",
     version=__version__,
     description="Tools to manage AWS Organizations with code",
     long_description=long_description,
-    url="https://gitlab.aws.dev/delhom/org-tool",
+    url="https://github.com/aws-samples/aws-organizations-tool",
     author="Laurent Delhomme",
     author_email="delhom@amazon.com",
     license="MIT",

@@ -31,16 +31,16 @@ Installation
 ------------
 Editable copy using virtual environment (recommended)::
 
-  git clone https://gitlab.aws.dev/delhom/org-tool
-  python -m venv ./org-tool/venv
-  source ./org-tool/venv/bin/activate
-  pip install -e ./org-tool/
+  git clone https://github.com/aws-samples/aws-organizations-tool
+  python -m venv ./aws-organizations-tool/venv
+  source ./aws-organizations-tool/venv/bin/activate
+  pip install -e ./aws-organizations-tool/
 
 
 Editable copy::
 
-  git clone https://gitlab.aws.dev/delhom/org-tool
-  pip install -e org-tool/
+  git clone https://github.com/aws-samples/aws-organizations-tool
+  pip install -e aws-organizations-tool/
 
 
 Uninstall::

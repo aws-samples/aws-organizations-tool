@@ -74,14 +74,14 @@
 <h2 id="installation">Installation</h2>
 <hr>
 <h3 id="editable-copy-using-virtual-environment-recommended">Editable copy using virtual environment (recommended):</h3>
-<pre><code>git clone https://gitlab.aws.dev/delhom/org-tool
-python -m venv ./org-tool/venv
-source ./org-tool/venv/bin/activate
-pip install -e ./org-tool/
+<pre><code>git clone https://github.com/aws-samples/aws-organizations-tool
+python -m venv ./aws-organizations-tool/venv
+source ./aws-organizations-tool/venv/bin/activate
+pip install -e ./aws-organizations-tool/
 </code></pre>
 <h3 id="editable-copy">Editable copy</h3>
-<pre><code>git clone https://gitlab.aws.dev/delhom/org-tool
-pip install -e org-tool/
+<pre><code>git clone https://github.com/aws-samples/aws-organizations-tool
+pip install -e aws-organizations-tool/
 </code></pre>
 <h3 id="uninstall">Uninstall:</h3>
 <pre><code>pip uninstall orgtool
@@ -147,9 +147,9 @@ orgtoolauth delegations [--exec]
 orgtoolauth local-users [--exec]
 
 orgtoolconfigure reverse-setup --template-dir ./spec_init_data.reverse --output-dir ~/.orgtool/root [--force] --master-account-id 123456789012 --org-access-role OrgAdminRole [--exec] [-q] [-d|-dd]
-orgtoolconfigure distributed-config create --template-config ./org-tool/spec_init_data.entity/config.yaml --child-config ~/.orgtool/dist1/config.yaml [--prefix dist1] --config ~/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root [--exec] [-q] [-d|-dd]
+orgtoolconfigure distributed-config create --template-config ./aws-organizations-tool/spec_init_data.entity/config.yaml --child-config ~/.orgtool/dist1/config.yaml [--prefix dist1] --config ~/.orgtool/root/config.yaml  --ou-name dist1 --ou-path /root [--exec] [-q] [-d|-dd]
 orgtoolconfigure organization-unit create --config ~/.orgtool/root --ou-path /root/test [--exec] [-q] [-d|-dd]
-orgtoolconfigure validate --config &lt;~/.orgtool/root [-q] [-d|-dd]
+orgtoolconfigure validate --config ~/.orgtool/root [-q] [-d|-dd]
 </code></pre>
 <h1 id="iac-setup-into-an-existing-master-account-of-an-existing-aws-organization">IaC setup into an existing master account of an existing AWS Organization</h1>
 <p>The package provide the setup to initialize the deployment of an IaC pipeline into an existing AWS Organization. This use case helps customers started to use AWS Organization from the AW Console and wants to transition to an IaC pattern.</p>

@@ -393,7 +393,7 @@ Resources:
               commands:
                 - echo "pre build ..."
                 - |
-                  echo "install org-tool"
+                  echo "install aws-organizations-tool"
                   pip install -e ./
                   orgtool --version
                   orgtool --help
