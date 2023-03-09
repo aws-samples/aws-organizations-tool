@@ -25,6 +25,8 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub orgformation-artifacts-${AWS::AccountId}-${AWS::Region}
+      VersioningConfiguration:
+        Status: Enabled
       PublicAccessBlockConfiguration:
         BlockPublicAcls: True
         BlockPublicPolicy: True
@@ -68,7 +70,9 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:List*
+                  - s3:GetObjectVersion
                   - s3:DeleteObject
+                  - s3:DeleteObjectVersion
                 Resource:
                   - arn:aws:s3:::*
                   - arn:aws:s3:::*/*
@@ -101,7 +105,7 @@ Resources:
                   # Need to empty the S3 bucket before it is deleted
                   s3 = boto3.resource('s3')
                   bucket = s3.Bucket(s3bucketName)
-                  bucket.objects.all().delete()
+                  bucket.object_versions.delete()
                   responseData['Message'] = "Resource deletion successful!"
               cfnresponse.send(event, context, ResponseStatus, responseData)
       Handler: index.handler
