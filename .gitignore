@@ -18,3 +18,13 @@ __*
 source.zip
 test.py
 test.sh
+
+
+
+# OS generated files #
+######################
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
+*.DS_Store
