@@ -129,7 +129,7 @@ def validate_spec_file(log, spec_file, validator, errors):
         return (spec_from_file, errors)
     else:
         log.error(f"schema validation failed for spec_file: {spec_file}")
-        log.debug(f"validator errors:\n{yamlfmt(validator.errors)}")
+        log.debug(f"validator errors:\n{yamlfmt(validator.errors)}")  # noqa: E231 - false positive, \n is intentional newline in f-string
         errors += 1
         return (None, errors)
 
@@ -145,7 +145,7 @@ def validate_spec_dict(log, spec, validator, errors):
             ),
         )
         log.debug("\n" + yamlfmt(spec))
-        log.debug(f"validator errors:\n{yamlfmt(validator.errors)}")
+        log.debug(f"validator errors:\n{yamlfmt(validator.errors)}")  # noqa: E231 - false positive, \n is intentional newline in f-string
         errors += 1
         return (None, errors)
 
@@ -217,7 +217,7 @@ def validate_spec(log, args, recursive=True):
             ),
         )
         sys.exit(1)
-    log.debug(f"spec_object:\n{yamlfmt(spec_object)}")
+    log.debug(f"spec_object:\n{yamlfmt(spec_object)}")  # noqa: E231 - false positive, \n is intentional newline in f-string
 
     # # # # validate aggregated spec_object
     # # # # validator = spec_validator(log)

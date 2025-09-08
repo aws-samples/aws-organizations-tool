@@ -236,7 +236,7 @@ def get_assume_role_credentials(account_id, role_name, region_name=None):
     """
     Get temporary sts assume_role credentials for account.
     """
-    role_arn = f"arn:aws:iam::{account_id}:role/{role_name}"
+    role_arn = f"arn:aws:iam::{account_id}:role/{role_name}"  # noqa: E231 - false positive, colons are part of ARN format
     role_session_name = account_id + "-" + role_name.split("/")[-1]
     sts_client = boto3.client("sts")
 
@@ -399,7 +399,7 @@ def dump_to_spec_config(args, log, org_spec, config_key, spec_dir_template=None)
     log.debug("dump yaml dict to file config")
 
     if config_key not in org_spec:
-        log.error(f"'{config_key}' not found in org_spec")
+        log.error(f"'{config_key}' not found in org_spec")  # noqa: E713 - false positive, this is log message text not code
         sys.exit(-1)
 
     spec_dir = args["--spec-dir"]

@@ -346,7 +346,7 @@ def display_provisioned_groups(log, args, deployed, credentials):
                     profiles[account_name] = role_arn
             for account_name in sorted(profiles.keys()):
                 messages.append(
-                    f"  {account_name}:\t{profiles[account_name]}",
+                    f"  {account_name}:\t{profiles[account_name]}",  # noqa: E231 - false positive, \t is intentional tab in f-string
                 )
         report[group_name] = messages
 
