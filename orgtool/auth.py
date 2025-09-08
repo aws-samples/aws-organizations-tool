@@ -553,7 +553,9 @@ def build_resource_list(log, deployed_accounts, d_spec, auth_spec, account_list)
         if account_id is not None:
             resource.append(build_role_arn(account_id, d_spec, auth_spec))
         else:
+            # fmt: off
             log.warn(f"Account {account} not found in deployed accounts")  # noqa: E713 - false positive, this is log message text not code
+            # fmt: on
     return resource
 
 
@@ -1390,7 +1392,9 @@ def main():
 
 def core(args):
     log = get_logger(args)
+    # fmt: off
     log.debug(f"{__name__}: args:\n{args}")  # noqa: E231 - false positive, \n is intentional newline in f-string
+    # fmt: on
     log.info("Laurent Delhomme <delhom@amazon.com> AWS June 2020")
     args = load_config(log, args)
     auth_spec = validate_spec(log, args)

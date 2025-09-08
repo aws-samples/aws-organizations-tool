@@ -217,8 +217,10 @@ def build_deployed_ou_table(
             NextToken=response["NextToken"],
         )
         accounts += response["Accounts"]
+    # fmt: off
     log.debug(f"parent_name: {parent_name}; ou: {yamlfmt(child_ou)}")  # noqa: E702 - false positive, semicolon is in f-string for formatting
     log.debug(f"parent_name: {parent_name}; accounts: {yamlfmt(accounts)}")  # noqa: E702 - false positive, semicolon is in f-string for formatting
+    # fmt: on
 
     if not deployed_ou:
         deployed_ou.append(

@@ -352,8 +352,10 @@ def distributed_config_delete(args, log, org_spec):
                 dump_to_spec_config(args, log, org_spec, "organizational_units")
                 break
     else:
+        # fmt: off
         log.error(f"'{child_ou_path}' not found in org_spec OUs")  # noqa: E713 - false positive, this is log message text not code
         raise Exception(f"'{child_ou_path}' not found in org_spec OUs")  # noqa: E713 - false positive, this is exception message text not code
+        # fmt: on
         # sys.exit(-1)
 
 

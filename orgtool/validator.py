@@ -4,6 +4,7 @@ Spec validator schema data
 ISSUES:
     place regex rule on email addresses, domain name
 """
+
 # from logging import error
 import yaml
 from cerberus import schema_registry

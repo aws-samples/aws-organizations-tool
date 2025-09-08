@@ -1,4 +1,5 @@
 """Utility functions used by the various orgtool modules"""
+
 import difflib
 import io
 import os
@@ -236,7 +237,9 @@ def get_assume_role_credentials(account_id, role_name, region_name=None):
     """
     Get temporary sts assume_role credentials for account.
     """
+    # fmt: off
     role_arn = f"arn:aws:iam::{account_id}:role/{role_name}"  # noqa: E231 - false positive, colons are part of ARN format
+    # fmt: on
     role_session_name = account_id + "-" + role_name.split("/")[-1]
     sts_client = boto3.client("sts")
 
@@ -333,6 +336,7 @@ def get_account_aliases(log, deployed_accounts, role):
 
     role::  name of IAM role to assume to query all deployed accounts.
     """
+
     # worker function for threading
     def get_account_alias(account, log, role, aliases):
         if account["Status"] == "ACTIVE":
@@ -399,7 +403,9 @@ def dump_to_spec_config(args, log, org_spec, config_key, spec_dir_template=None)
     log.debug("dump yaml dict to file config")
 
     if config_key not in org_spec:
+        # fmt: off
         log.error(f"'{config_key}' not found in org_spec")  # noqa: E713 - false positive, this is log message text not code
+        # fmt: on
         sys.exit(-1)
 
     spec_dir = args["--spec-dir"]
@@ -455,6 +461,7 @@ def report_maker(log, accounts, role, query_func, report_header=None, **qf_args)
     Generate a report by running a arbitrary query function in each account.
     The query function must return a list of strings.
     """
+
     # Thread worker function to gather report for each account
     def make_account_report(account, report, role):
         messages = []

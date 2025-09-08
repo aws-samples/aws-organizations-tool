@@ -5,6 +5,7 @@ Todo:
     allow reporting on single account or short list of accounts
     substitute account alias for account id in reports
 """
+
 import csv
 import io
 
@@ -39,6 +40,7 @@ def report_maker(log, accounts, role, query_func, report_header=None, **qf_args)
     Generate a report by running a arbitrary query function in each account.
     The query function must return a list of strings.
     """
+
     # Thread worker function to gather report for each account
     def make_account_report(account, report, role):
         messages = []
@@ -309,6 +311,7 @@ def display_provisioned_groups(log, args, deployed, credentials):
     List group members, attached policies and delegation assume role
     profiles.
     """
+
     # Thread worker function to assemble lines of a group report
     def display_group(group_name, report, iam_resource):
         log.debug("group_name: %s" % group_name)
@@ -345,9 +348,9 @@ def display_provisioned_groups(log, args, deployed, credentials):
                 if account_name:
                     profiles[account_name] = role_arn
             for account_name in sorted(profiles.keys()):
-                messages.append(
-                    f"  {account_name}:\t{profiles[account_name]}",  # noqa: E231 - false positive, \t is intentional tab in f-string
-                )
+                # fmt: off
+                messages.append(f"  {account_name}:\t{profiles[account_name]}",)  # noqa: E231 - false positive, \t is intentional tab in f-string
+                # fmt: on
         report[group_name] = messages
 
     group_names = sorted([g["GroupName"] for g in deployed["groups"]])
@@ -386,6 +389,7 @@ def display_roles_in_accounts(log, args, deployed, auth_spec):
     in the Organization.
     We only care about AWS principals, not Service principals.
     """
+
     # Thread worker function to gather report for each account
     def display_role(account, report, auth_spec):
         messages = []

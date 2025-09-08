@@ -355,7 +355,9 @@ def core(args):
     log = get_logger(args)
     log.debug(args)
     log.info("Laurent Delhomme <delhom@amazon.com> AWS June 2020")
+    # fmt: off
     log.debug(f"{__name__}: args:\n{args}")  # noqa: E231 - false positive, \n is intentional newline in f-string
+    # fmt: on
     args = load_config(log, args)
     spec = validate_spec(log, args)
 
