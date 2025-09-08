@@ -349,7 +349,7 @@ def display_provisioned_groups(log, args, deployed, credentials):
                     profiles[account_name] = role_arn
             for account_name in sorted(profiles.keys()):
                 # fmt: off
-                messages.append(f"  {account_name}:\t{profiles[account_name]}",)  # noqa: E231 - false positive, \t is intentional tab in f-string
+                messages.append(f"  {account_name}:\t{profiles[account_name]}")  # noqa: E231 - false positive, \t is intentional tab in f-string
                 # fmt: on
         report[group_name] = messages
 
