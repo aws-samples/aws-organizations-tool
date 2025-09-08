@@ -1,5 +1,4 @@
 """Utility functions used by the various orgtool modules"""
-
 import difflib
 import io
 import os

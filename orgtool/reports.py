@@ -5,7 +5,6 @@ Todo:
     allow reporting on single account or short list of accounts
     substitute account alias for account id in reports
 """
-
 import csv
 import io
 
